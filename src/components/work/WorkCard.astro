@@ -1,0 +1,265 @@
+---
+import Tag from '../Tag.astro';
+import Shot from './Shot.astro';
+import { localizePath, type Locale } from '../../i18n';
+import { workPath, workUi, type WorkCase } from '../../data/work';
+
+/**
+ * Large project card for the home "Selected work" section.
+ * The media area is painted with the product's own colors and shows its logo
+ * and real screenshots; the whole card is one link to the case page.
+ */
+interface Props {
+  work: WorkCase;
+  locale: Locale;
+  /** The first card may sit above the fold on large screens. */
+  eager?: boolean;
+}
+
+const { work, locale, eager = false } = Astro.props;
+const { theme, logo } = work;
+const href = localizePath(workPath(work.slug), locale);
+const layout = work.heroShots.every((shot) => shot.kind === 'phone') ? 'phones' : 'desk';
+
+const style = [
+  `--card-bg: ${theme.cardBg}`,
+  `--card-text: ${theme.cardText}`,
+  `--card-mark: ${theme.mark}`,
+  `--card-accent: ${theme.accent}`,
+].join('; ');
+---
+
+<article class="work-card" style={style}>
+  <div class:list={['work-card__media', `work-card__media--${layout}`]}>
+    <p class="work-card__logo">
+      <img
+        src={logo.image.src}
+        width={logo.width}
+        height={logo.height}
+        alt={logo.text ? '' : work.name}
+        class:list={{ 'work-card__logo-mark': Boolean(logo.text) }}
+      />
+      {logo.text && <span>{logo.text}</span>}
+    </p>
+    {
+      work.heroShots.map((shot, index) => (
+        <Shot
+          class={`work-card__shot work-card__shot--${shot.kind} work-card__shot--${index + 1}`}
+          image={shot.image}
+          kind={shot.kind}
+          alt={shot.alt[locale]}
+          sizes={
+            shot.kind === 'phone'
+              ? '(min-width: 52rem) 150px, 28vw'
+              : '(min-width: 52rem) 560px, 95vw'
+          }
+          eager={eager}
+        />
+      ))
+    }
+  </div>
+
+  <div class="work-card__body">
+    <p class="work-card__eyebrow mono-label">
+      <span class="work-card__dot" aria-hidden="true"></span>
+      {work.cardEyebrow[locale]}
+    </p>
+    <h3 class="work-card__title">
+      <a class="work-card__link" href={href}>{work.name}</a>
+    </h3>
+    <p class="work-card__summary">{work.cardSummary[locale]}</p>
+    <ul class="work-card__tags" role="list">
+      {
+        work.cardTags.map((tag) => (
+          <li>
+            <Tag>{tag}</Tag>
+          </li>
+        ))
+      }
+    </ul>
+    <p class="work-card__cta mono" aria-hidden="true">
+      {workUi.viewCase[locale]}
+      <span class="work-card__arrow">→</span>
+    </p>
+  </div>
+</article>
+
+<style>
+  .work-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: var(--border-hairline);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition: border-color var(--duration-base) ease;
+  }
+
+  .work-card:hover,
+  .work-card:focus-within {
+    border-color: var(--card-mark);
+  }
+
+  /* ---------- Media ---------- */
+
+  .work-card__media {
+    position: relative;
+    aspect-ratio: 16 / 11;
+    overflow: hidden;
+    background: var(--card-bg);
+    color: var(--card-text);
+    --shot-line: rgb(0 0 0 / 0.28);
+  }
+
+  .work-card__logo {
+    position: absolute;
+    top: 7%;
+    left: 6%;
+    z-index: var(--z-raised);
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    font-size: clamp(1.125rem, 0.9rem + 1.2vw, 1.5rem);
+    font-weight: var(--weight-semibold);
+    letter-spacing: var(--tracking-tight);
+    line-height: 1;
+  }
+
+  /* Lockup image (the wordmark is part of the artwork). */
+  .work-card__logo img {
+    width: clamp(6.5rem, 30%, 9rem);
+    min-width: 6.5rem;
+    height: auto;
+  }
+
+  /* App icon next to a text wordmark. */
+  .work-card__logo img.work-card__logo-mark {
+    width: 1.6em;
+    min-width: 0;
+    border-radius: 27%;
+  }
+
+  .work-card__media :global(.work-card__shot) {
+    position: absolute;
+    box-shadow: 0 1.25rem 2.5rem rgb(0 0 0 / 0.35);
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
+  /* Desktop capture bleeding off the bottom-right corner, phone on top. */
+  .work-card__media--desk :global(.work-card__shot--wide) {
+    top: 34%;
+    left: 6%;
+    width: 112%;
+  }
+
+  .work-card__media--desk :global(.work-card__shot--phone) {
+    top: 12%;
+    right: 6%;
+    width: 25%;
+  }
+
+  /* Two phones, staggered, on the right half. */
+  .work-card__media--phones :global(.work-card__shot--1) {
+    top: 30%;
+    left: 38%;
+    width: 26%;
+  }
+
+  .work-card__media--phones :global(.work-card__shot--2) {
+    top: 12%;
+    left: 68%;
+    width: 26%;
+  }
+
+  .work-card:hover :global(.work-card__shot) {
+    transform: translateY(-0.25rem);
+  }
+
+  /* ---------- Body ---------- */
+
+  .work-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+    border-top: var(--border-hairline);
+  }
+
+  .work-card__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+  }
+
+  .work-card__dot {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: var(--radius-full);
+    background: var(--card-mark);
+  }
+
+  .work-card__title {
+    font-size: var(--text-2xl);
+  }
+
+  .work-card__link {
+    text-decoration: none;
+  }
+
+  .work-card__link:hover {
+    color: inherit;
+  }
+
+  /* Stretch the title link over the whole card. */
+  .work-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+  }
+
+  .work-card__link:focus-visible {
+    outline: none;
+  }
+
+  .work-card:has(.work-card__link:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .work-card__summary {
+    max-width: 52ch;
+    color: var(--color-text-muted);
+    line-height: 1.55;
+  }
+
+  .work-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding-top: var(--space-2);
+  }
+
+  .work-card__cta {
+    display: flex;
+    align-items: center;
+    gap: 0.6em;
+    margin-top: auto;
+    padding-top: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  .work-card__arrow {
+    color: var(--card-accent);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .work-card:hover .work-card__arrow {
+    transform: translateX(3px);
+  }
+</style>

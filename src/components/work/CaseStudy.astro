@@ -1,0 +1,811 @@
+---
+import { getImage } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Button from '../Button.astro';
+import Metric from '../Metric.astro';
+import Section from '../Section.astro';
+import Tag from '../Tag.astro';
+import Shot from './Shot.astro';
+import { localizePath, t, type Locale } from '../../i18n';
+import {
+  getNextWorkCase,
+  getWorkCase,
+  pick,
+  workPath,
+  workUi,
+  type WorkSlug,
+} from '../../data/work';
+
+/**
+ * Case study page shared by `/work/<slug>/` (en) and `/es/work/<slug>/` (es).
+ * The shell (header, footer, dark surface) is the portfolio's; the hero band
+ * and the accent color take the product's own identity through CSS variables.
+ */
+interface Props {
+  slug: WorkSlug;
+  locale: Locale;
+}
+
+const { slug, locale } = Astro.props;
+const work = getWorkCase(slug);
+const next = getNextWorkCase(slug);
+const { theme, logo } = work;
+
+const firstShot = work.heroShots[0];
+const shareImage =
+  firstShot?.kind === 'wide'
+    ? (await getImage({ src: firstShot.image, width: 1200, format: 'jpg' })).src
+    : undefined;
+
+const heroLayout = work.heroShots.every((shot) => shot.kind === 'phone') ? 'phones' : 'desk';
+const wideShots = work.gallery.shots.filter((shot) => shot.kind === 'wide');
+const phoneShots = work.gallery.shots.filter((shot) => shot.kind === 'phone');
+
+const themeStyle = [
+  `--hero-bg: ${theme.heroBg}`,
+  `--hero-text: ${theme.heroText}`,
+  `--hero-muted: ${theme.heroMuted}`,
+  `--hero-line: ${theme.heroLine}`,
+  `--hero-button-bg: ${theme.heroButtonBg}`,
+  `--hero-button-bg-hover: ${theme.heroButtonBgHover}`,
+  `--hero-button-text: ${theme.heroButtonText}`,
+  `--case-accent: ${theme.accent}`,
+  `--case-accent-hover: ${theme.accentHover}`,
+  `--case-accent-ink: ${theme.accentInk}`,
+  `--case-mark: ${theme.mark}`,
+  `--band-bg: ${theme.bandBg}`,
+  `--band-text: ${theme.bandText}`,
+  `--band-muted: ${theme.bandMuted}`,
+  `--case-display: ${theme.displayFont}`,
+  `--case-display-weight: ${theme.displayWeight}`,
+].join('; ');
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const resolveHref = (link: (typeof work.links)[number]) =>
+  link.sitePath ? `${base}/${link.href}` : link.href;
+---
+
+<Base
+  locale={locale}
+  title={work.name}
+  description={work.metaDescription[locale]}
+  image={shareImage}
+  ogType="article"
+>
+  <article class="case" style={themeStyle}>
+    <header class="case-hero">
+      <div class="container">
+        <a class="case-hero__back mono-label" href={localizePath('/#work', locale)}>
+          <span aria-hidden="true">←</span>
+          {workUi.back[locale]}
+        </a>
+
+        <div class:list={['case-hero__grid', `case-hero__grid--${heroLayout}`]}>
+          <div class="case-hero__copy">
+            <h1 class="case-hero__brand">
+              <img
+                src={logo.image.src}
+                width={logo.width}
+                height={logo.height}
+                alt={logo.text ? '' : work.name}
+                class:list={{ 'case-hero__brand-mark': Boolean(logo.text) }}
+              />
+              {logo.text && <span>{logo.text}</span>}
+            </h1>
+            <p class="case-hero__pitch">{work.pitch[locale]}</p>
+            <div class="case-hero__actions cluster" style="--cluster-gap: var(--space-3)">
+              {
+                work.links.map((link, index) => (
+                  <Button
+                    href={resolveHref(link)}
+                    variant={index === 0 ? 'primary' : 'ghost'}
+                    external={link.external}
+                    arrow
+                  >
+                    {link.label[locale]}{' '}
+                    {link.external && (
+                      <span class="visually-hidden">({t(locale, 'a11y.external')})</span>
+                    )}
+                  </Button>
+                ))
+              }
+            </div>
+          </div>
+
+          <div class:list={['case-hero__visual', `case-hero__visual--${heroLayout}`]}>
+            {
+              work.heroShots.map((shot, index) => (
+                <Shot
+                  class={`case-hero__shot case-hero__shot--${shot.kind} case-hero__shot--${index + 1}`}
+                  image={shot.image}
+                  kind={shot.kind}
+                  alt={shot.alt[locale]}
+                  sizes={
+                    shot.kind === 'wide'
+                      ? '(min-width: 60rem) 620px, 92vw'
+                      : heroLayout === 'phones'
+                        ? '(min-width: 60rem) 240px, 42vw'
+                        : '(min-width: 60rem) 170px, 26vw'
+                  }
+                  eager
+                />
+              ))
+            }
+          </div>
+        </div>
+
+        <dl class="case-hero__meta">
+          {
+            work.meta.map((item) => (
+              <div>
+                <dt class="mono-label">{item.label[locale]}</dt>
+                <dd>{item.value[locale]}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </div>
+    </header>
+
+    <Section
+      id="overview"
+      index="01"
+      label={workUi.overviewLabel[locale]}
+      title={work.overview.title[locale]}
+    >
+      <div class="overview">
+        <div class="overview__text stack" style="--stack-gap: var(--space-5)">
+          {work.overview.paragraphs[locale].map((paragraph) => <p>{paragraph}</p>)}
+        </div>
+        <ul class="overview__points" role="list">
+          {
+            work.overview.points.map((point) => (
+              <li>
+                <span class="overview__dot" aria-hidden="true" />
+                <div>
+                  <h3>{point.title[locale]}</h3>
+                  <p>{point.body[locale]}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </Section>
+
+    <Section
+      id="engineering"
+      index="02"
+      label={workUi.engineeringLabel[locale]}
+      title={work.engineering.title[locale]}
+    >
+      <p slot="lead">{work.engineering.lead[locale]}</p>
+
+      <ol class="layers" role="list" aria-label={workUi.architectureLabel[locale]}>
+        {
+          work.engineering.layers.map((layer) => (
+            <li class:list={['layer', { 'layer--highlight': layer.highlight }]}>
+              <p class="layer__label mono-label">{layer.label[locale]}</p>
+              <ul class="layer__nodes" role="list">
+                {layer.nodes.map((node) => (
+                  <li class="layer__node">
+                    <p class="layer__title">{pick(node.title, locale)}</p>
+                    <p class="layer__detail">{node.detail[locale]}</p>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))
+        }
+      </ol>
+
+      <ul class="metrics" role="list" aria-label={workUi.metricsLabel[locale]}>
+        {
+          work.engineering.metrics.map((metric) => (
+            <li>
+              <Metric
+                value={pick(metric.value, locale)}
+                unit={metric.unit}
+                caption={metric.caption[locale]}
+                tone="accent"
+              />
+            </li>
+          ))
+        }
+      </ul>
+
+      <ul class="facts" role="list">
+        {
+          work.engineering.facts.map((fact) => (
+            <li>
+              <h3>{fact.title[locale]}</h3>
+              <p>{fact.body[locale]}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </Section>
+
+    <Section
+      id="screens"
+      index="03"
+      label={workUi.galleryLabel[locale]}
+      title={work.gallery.title[locale]}
+    >
+      <p slot="lead">{work.gallery.lead[locale]}</p>
+
+      <div class="gallery">
+        {
+          wideShots.map((shot) => (
+            <figure class="gallery__item gallery__item--wide">
+              <Shot
+                image={shot.image}
+                kind="wide"
+                alt={shot.alt[locale]}
+                sizes="(min-width: 80rem) 1200px, 95vw"
+              />
+              <figcaption>{shot.caption[locale]}</figcaption>
+            </figure>
+          ))
+        }
+        {
+          phoneShots.length > 0 && (
+            <div class="gallery__phones" style={`--phones: ${phoneShots.length}`}>
+              {phoneShots.map((shot) => (
+                <figure class="gallery__item gallery__item--phone">
+                  <Shot
+                    image={shot.image}
+                    kind="phone"
+                    alt={shot.alt[locale]}
+                    sizes="(min-width: 64rem) 240px, (min-width: 40rem) 30vw, 45vw"
+                  />
+                  <figcaption>{shot.caption[locale]}</figcaption>
+                </figure>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </Section>
+
+    <Section id="stack" index="04" label={workUi.stackLabel[locale]} title={workUi.stackTitle[locale]}>
+      <dl class="stack-groups">
+        {
+          work.stack.map((group) => (
+            <div class="stack-groups__row">
+              <dt class="mono-label">{group.label[locale]}</dt>
+              <dd>
+                <ul class="cluster" role="list">
+                  {group.items.map((item) => (
+                    <li>
+                      <Tag>{item}</Tag>
+                    </li>
+                  ))}
+                </ul>
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+      {work.note && <p class="case__note">{work.note[locale]}</p>}
+    </Section>
+
+    <nav class="case-next container" aria-label={workUi.next[locale]}>
+      <a class="case-next__link" href={localizePath(workPath(next.slug), locale)}>
+        <span class="mono-label">{workUi.next[locale]}</span>
+        <span class="case-next__name">
+          {next.name}
+          <span class="case-next__arrow" aria-hidden="true">→</span>
+        </span>
+        <span class="case-next__summary">{next.cardEyebrow[locale]}</span>
+      </a>
+    </nav>
+  </article>
+</Base>
+
+<style is:global>
+  /* Product display fonts. Each file is fetched only on the page that uses it. */
+  @font-face {
+    font-family: 'Quicksand';
+    src: url('../../assets/work/drupela/fonts/Quicksand-VF.ttf') format('truetype');
+    font-weight: 300 700;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  @font-face {
+    font-family: 'Manrope';
+    src: url('/pocketgame/assets/fonts/manrope-variable.ttf') format('truetype');
+    font-weight: 200 800;
+    font-style: normal;
+    font-display: swap;
+  }
+</style>
+
+<style>
+  /* Everything inside the case uses the product accent instead of the oxide one. */
+  .case {
+    --color-accent: var(--case-accent);
+    --color-accent-hover: var(--case-accent-hover);
+    --color-accent-ink: var(--case-accent-ink);
+    --color-accent-soft: color-mix(in srgb, var(--case-accent) 12%, transparent);
+    --color-accent-line: color-mix(in srgb, var(--case-accent) 40%, transparent);
+    --color-selection-bg: var(--case-accent);
+    --color-selection-text: var(--case-accent-ink);
+  }
+
+  /* ---------- Hero ---------- */
+
+  .case-hero {
+    --color-accent: var(--hero-button-bg);
+    --color-accent-hover: var(--hero-button-bg-hover);
+    --color-accent-ink: var(--hero-button-text);
+    --color-text: var(--hero-text);
+    --color-text-muted: var(--hero-muted);
+    --color-line-strong: var(--hero-line);
+    --color-focus: var(--hero-text);
+    --shot-line: rgb(0 0 0 / 0.3);
+
+    padding-block: var(--space-5) var(--space-7);
+    border-bottom: 1px solid var(--hero-line);
+    background: var(--hero-bg);
+    color: var(--hero-text);
+  }
+
+  .case-hero__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    min-height: 2.75rem;
+    color: var(--hero-muted);
+    text-decoration: none;
+  }
+
+  .case-hero__back:hover {
+    color: var(--hero-text);
+  }
+
+  .case-hero__grid {
+    display: grid;
+    gap: var(--space-7);
+    align-items: center;
+    padding-block: var(--space-6) var(--space-7);
+  }
+
+  .case-hero__copy {
+    display: grid;
+    gap: var(--space-5);
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .case-hero__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.45em;
+    font-family: var(--case-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--case-display-weight);
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+
+  /* Lockup artwork: the wordmark is part of the image. */
+  .case-hero__brand img {
+    width: clamp(9rem, 40vw, 12.5rem);
+    height: auto;
+    margin-left: -0.35rem; /* optical: the artwork has built-in clear space */
+  }
+
+  /* App icon next to a text wordmark. */
+  .case-hero__brand img.case-hero__brand-mark {
+    width: 1.5em;
+    margin-left: 0;
+    border-radius: 27%;
+  }
+
+  .case-hero__pitch {
+    max-width: 20ch;
+    font-family: var(--case-display);
+    font-size: var(--text-4xl);
+    font-weight: var(--case-display-weight);
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+
+  .case-hero__actions {
+    padding-top: var(--space-2);
+  }
+
+  /* ---------- Hero visual ---------- */
+
+  .case-hero__visual {
+    position: relative;
+    min-width: 0;
+  }
+
+  .case-hero__visual :global(.case-hero__shot) {
+    box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.35);
+  }
+
+  /* Desktop capture with a phone overlapping its lower right corner. */
+  .case-hero__visual--desk {
+    padding: 0 6% 9% 0;
+  }
+
+  .case-hero__visual--desk :global(.case-hero__shot--phone) {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 27%;
+  }
+
+  /* Two phones side by side, the second one lower. */
+  .case-hero__visual--phones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 15rem));
+    gap: var(--space-5);
+    justify-content: center;
+    align-items: start;
+  }
+
+  .case-hero__visual--phones :global(.case-hero__shot--2) {
+    margin-top: 18%;
+  }
+
+  /* ---------- Hero meta ---------- */
+
+  .case-hero__meta {
+    display: grid;
+    gap: var(--space-5) var(--space-6);
+    padding-top: var(--space-5);
+    border-top: 1px solid var(--hero-line);
+  }
+
+  .case-hero__meta > div {
+    display: grid;
+    gap: var(--space-2);
+    align-content: start;
+  }
+
+  .case-hero__meta dt {
+    color: var(--hero-muted);
+  }
+
+  .case-hero__meta dd {
+    max-width: 38ch;
+    font-size: var(--text-base);
+    line-height: 1.5;
+  }
+
+  @media (min-width: 40rem) {
+    .case-hero__meta {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 60rem) {
+    .case-hero__grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+      gap: var(--space-8);
+    }
+
+    .case-hero__grid--phones {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    }
+
+    .case-hero__visual--phones {
+      justify-content: end;
+    }
+  }
+
+  /* ---------- Overview ---------- */
+
+  .overview {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .overview__text {
+    max-width: 62ch;
+    font-size: var(--text-lg);
+    line-height: 1.55;
+    color: var(--color-text-muted);
+  }
+
+  .overview__text p:first-child {
+    color: var(--color-text);
+  }
+
+  .overview__points {
+    display: grid;
+    align-content: start;
+  }
+
+  .overview__points li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    padding-block: var(--space-4);
+    border-top: var(--border-hairline);
+  }
+
+  .overview__points li:last-child {
+    border-bottom: var(--border-hairline);
+  }
+
+  /* Solid round mark in the product color. */
+  .overview__dot {
+    width: 0.625rem;
+    height: 0.625rem;
+    margin-top: 0.5em;
+    border-radius: var(--radius-full);
+    background: var(--case-mark);
+  }
+
+  .overview__points h3 {
+    font-size: var(--text-base);
+    letter-spacing: 0;
+  }
+
+  .overview__points p {
+    margin-top: var(--space-1);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+
+  @media (min-width: 60rem) {
+    .overview {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      gap: var(--space-8);
+    }
+  }
+
+  /* ---------- Architecture layers ---------- */
+
+  .layers {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  .layer {
+    position: relative;
+    display: grid;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    border: var(--border-hairline);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  /* Connector between one layer and the next. */
+  .layer + .layer::before {
+    content: '';
+    position: absolute;
+    top: calc(-1 * var(--space-5) - 1px);
+    left: var(--space-6);
+    width: 1px;
+    height: var(--space-5);
+    background: var(--case-mark);
+  }
+
+  .layer__nodes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(13rem, 100%), 1fr));
+    gap: var(--space-3);
+  }
+
+  .layer__node {
+    padding: var(--space-3) var(--space-4);
+    border: var(--border-hairline);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg);
+  }
+
+  .layer__title {
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+  }
+
+  .layer__detail {
+    margin-top: var(--space-1);
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    color: var(--color-text-muted);
+  }
+
+  .layer--highlight {
+    border-color: transparent;
+    background: var(--band-bg);
+    color: var(--band-text);
+  }
+
+  .layer--highlight .layer__label,
+  .layer--highlight .layer__detail {
+    color: var(--band-muted);
+  }
+
+  .layer--highlight .layer__node {
+    border-color: color-mix(in srgb, var(--band-text) 28%, transparent);
+    background: transparent;
+  }
+
+  @media (min-width: 52rem) {
+    .layer {
+      grid-template-columns: 9rem minmax(0, 1fr);
+      align-items: center;
+      gap: var(--space-5);
+      padding: var(--space-4) var(--space-5);
+    }
+  }
+
+  /* ---------- Metrics and facts ---------- */
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6) var(--space-5);
+    margin-top: var(--space-8);
+  }
+
+  .facts {
+    display: grid;
+    gap: var(--space-6) var(--space-6);
+    margin-top: var(--space-8);
+  }
+
+  .facts li {
+    padding-top: var(--space-4);
+    border-top: var(--border-hairline);
+  }
+
+  .facts h3 {
+    font-size: var(--text-lg);
+  }
+
+  .facts p {
+    max-width: 44ch;
+    margin-top: var(--space-2);
+    color: var(--color-text-muted);
+    line-height: 1.55;
+  }
+
+  @media (min-width: 40rem) {
+    .facts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 52rem) {
+    .metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* ---------- Gallery ---------- */
+
+  .gallery {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .gallery__item {
+    display: grid;
+    gap: var(--space-3);
+    align-content: start;
+    min-width: 0;
+  }
+
+  .gallery__item figcaption {
+    font-size: var(--text-sm);
+    line-height: 1.45;
+    color: var(--color-text-muted);
+  }
+
+  .gallery__phones {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6) var(--space-4);
+  }
+
+  @media (min-width: 40rem) {
+    .gallery__phones {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-6) var(--space-5);
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .gallery__phones {
+      grid-template-columns: repeat(var(--phones), minmax(0, 15rem));
+    }
+  }
+
+  /* ---------- Stack ---------- */
+
+  .stack-groups {
+    display: grid;
+  }
+
+  .stack-groups__row {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-4);
+    border-top: var(--border-hairline);
+  }
+
+  .stack-groups__row:last-child {
+    border-bottom: var(--border-hairline);
+  }
+
+  @media (min-width: 40rem) {
+    .stack-groups__row {
+      grid-template-columns: 14rem minmax(0, 1fr);
+      align-items: center;
+    }
+  }
+
+  .case__note {
+    max-width: 70ch;
+    margin-top: var(--space-6);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+    color: var(--color-text-subtle);
+  }
+
+  /* ---------- Next project ---------- */
+
+  .case-next {
+    margin-top: var(--space-section);
+  }
+
+  .case-next__link {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-6);
+    border-block: var(--border-strong);
+    text-decoration: none;
+  }
+
+  .case-next__link:hover {
+    color: inherit;
+  }
+
+  .case-next__name {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--text-4xl);
+    font-weight: var(--weight-semibold);
+    line-height: 1.05;
+    letter-spacing: var(--tracking-tighter);
+  }
+
+  .case-next__arrow {
+    font-family: var(--font-mono);
+    font-size: 0.6em;
+    font-weight: var(--weight-regular);
+    letter-spacing: 0;
+    color: var(--color-text-subtle);
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      color var(--duration-base) ease;
+  }
+
+  .case-next__link:hover .case-next__arrow {
+    color: var(--color-accent);
+    transform: translateX(6px);
+  }
+
+  .case-next__summary {
+    color: var(--color-text-muted);
+  }
+</style>

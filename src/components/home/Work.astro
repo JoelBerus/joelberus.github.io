@@ -1,6 +1,7 @@
 ---
-import ProjectCard from '../ProjectCard.astro';
 import Section from '../Section.astro';
+import WorkCard from '../work/WorkCard.astro';
+import { workCases, workUi } from '../../data/work';
 import { useTranslations, type Locale } from '../../i18n';
 
 interface Props {
@@ -9,29 +10,30 @@ interface Props {
 
 const { locale } = Astro.props;
 const tr = useTranslations(locale);
-
-// PLACEHOLDER: replace with the real case studies.
-const projects = [
-  { eyebrow: 'Case study 01', accent: 'var(--color-accent)' },
-  { eyebrow: 'Case study 02', accent: 'var(--color-data)' },
-];
 ---
 
 <Section id="work" index="01" label={tr('work.label')} title={tr('work.title')}>
-  <div class="grid" style="--grid-min: 22rem">
+  <p slot="lead">{workUi.sectionLead[locale]}</p>
+  <ul class="work-grid" role="list">
     {
-      projects.map((project) => (
-        <ProjectCard
-          title={tr('common.placeholder')}
-          summary={tr('common.placeholder')}
-          href="#work"
-          eyebrow={project.eyebrow}
-          accent={project.accent}
-          tags={['TypeScript', 'React', 'Node.js']}
-        >
-          <div slot="media" />
-        </ProjectCard>
+      workCases.map((work) => (
+        <li>
+          <WorkCard work={work} locale={locale} />
+        </li>
       ))
     }
-  </div>
+  </ul>
 </Section>
+
+<style>
+  .work-grid {
+    display: grid;
+    gap: var(--space-5);
+  }
+
+  @media (min-width: 52rem) {
+    .work-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+</style>
