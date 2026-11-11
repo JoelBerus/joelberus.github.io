@@ -8,11 +8,12 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
+    "dev": "node scripts/build-wasm.mjs && astro dev",
+    "build": "node scripts/build-wasm.mjs && astro build",
     "preview": "astro preview",
-    "check": "astro check",
-    "build:wasm": "node scripts/build-wasm.mjs"
+    "check": "node scripts/build-wasm.mjs && astro check",
+    "build:wasm": "node scripts/build-wasm.mjs",
+    "test:rust": "cargo test --manifest-path crates/field/Cargo.toml"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.12",
@@ -20,6 +21,7 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "astro": "^5",
+    "sharp": "^0.35.5",
     "typescript": "^5"
   }
 }

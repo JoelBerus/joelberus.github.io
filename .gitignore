@@ -8,6 +8,8 @@ dist/
 # rust / wasm
 target/
 crates/*/pkg/
+# wasm-pack output, rebuilt by scripts/build-wasm.mjs (locally and in CI)
+src/wasm/
 
 # misc
 .DS_Store

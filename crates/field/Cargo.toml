@@ -1,0 +1,37 @@
+[package]
+name = "field"
+version = "0.1.0"
+edition = "2024"
+description = "Deterministic particle flow field, compiled to WebAssembly for a portfolio hero."
+license = "MIT"
+publish = false
+
+[lib]
+# cdylib: the .wasm module loaded by the browser.
+# rlib:   lets `cargo test` link the same code natively.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+
+# Tuned for download size: this ships to every visitor of the page.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# wasm-opt has to be told about the WebAssembly features that current rustc
+# enables by default for wasm32-unknown-unknown, or it rejects the module.
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = [
+    "-Os",
+    "--strip-debug",
+    "--strip-producers",
+    "--enable-bulk-memory",
+    "--enable-mutable-globals",
+    "--enable-nontrapping-float-to-int",
+    "--enable-sign-ext",
+    "--enable-multivalue",
+    "--enable-reference-types",
+]
