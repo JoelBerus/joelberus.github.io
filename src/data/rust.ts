@@ -9,7 +9,7 @@ export const FIELD_SOURCE_URL = 'https://github.com/JoelBerus/joelberus.github.i
 
 const en = {
   hero: {
-    tagline: 'Full Stack Developer — React, React Native, TypeScript, Node.js',
+    tagline: 'Full Stack Developer | React, Next, Node.js, Java',
     support:
       '5+ years building web and mobile apps for banking and e-commerce, most recently at SoFi (formerly Technisys). I also design and ship my own products.',
     facts: ['Guayaquil, Ecuador · Remote', 'English B2 · Spanish native', 'Open to full-stack roles'],
@@ -82,7 +82,7 @@ type Copy = typeof en;
 
 const es: Copy = {
   hero: {
-    tagline: 'Desarrollador Full Stack — React, React Native, TypeScript, Node.js',
+    tagline: 'Desarrollador Full Stack | React, Next, Node.js, Java',
     support:
       'Más de 5 años creando aplicaciones web y móviles para banca y comercio electrónico, los últimos en SoFi (antes Technisys). También diseño y lanzo mis propios productos.',
     facts: ['Guayaquil, Ecuador · Remoto', 'Inglés B2 · Español nativo', 'Disponible para puestos full stack'],
