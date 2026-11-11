@@ -1,0 +1,37 @@
+---
+import ProjectCard from '../ProjectCard.astro';
+import Section from '../Section.astro';
+import { useTranslations, type Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+
+// PLACEHOLDER: replace with the real case studies.
+const projects = [
+  { eyebrow: 'Case study 01', accent: 'var(--color-accent)' },
+  { eyebrow: 'Case study 02', accent: 'var(--color-data)' },
+];
+---
+
+<Section id="work" index="01" label={tr('work.label')} title={tr('work.title')}>
+  <div class="grid" style="--grid-min: 22rem">
+    {
+      projects.map((project) => (
+        <ProjectCard
+          title={tr('common.placeholder')}
+          summary={tr('common.placeholder')}
+          href="#work"
+          eyebrow={project.eyebrow}
+          accent={project.accent}
+          tags={['TypeScript', 'React', 'Node.js']}
+        >
+          <div slot="media" />
+        </ProjectCard>
+      ))
+    }
+  </div>
+</Section>

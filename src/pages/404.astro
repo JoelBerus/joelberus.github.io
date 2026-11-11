@@ -1,0 +1,38 @@
+---
+import Button from '../components/Button.astro';
+import Base from '../layouts/Base.astro';
+import { localizePath, t } from '../i18n';
+
+// GitHub Pages serves this single file for every unknown URL, so it is
+// written in English with a Spanish line and links to both home pages.
+---
+
+<Base title={t('en', 'notFound.title')} locale="en" noindex>
+  <section class="container not-found">
+    <p class="mono-label"><span class="accent">404</span> / Not found</p>
+    <h1>{t('en', 'notFound.title')}</h1>
+    <p class="lead">{t('en', 'notFound.body')}</p>
+    <p class="lead" lang="es">{t('es', 'notFound.body')}</p>
+    <div class="cluster" style="--cluster-gap: var(--space-3)">
+      <Button href={localizePath('/', 'en')} arrow>{t('en', 'notFound.back')}</Button>
+      <Button href={localizePath('/', 'es')} variant="ghost" lang="es" hreflang="es">
+        {t('es', 'notFound.back')}
+      </Button>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .not-found {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-5);
+    min-height: 60vh;
+    padding-block: var(--space-9);
+  }
+
+  h1 {
+    font-size: var(--text-4xl);
+  }
+</style>

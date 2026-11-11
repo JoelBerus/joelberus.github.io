@@ -1,0 +1,21 @@
+---
+import Button from '../Button.astro';
+import Section from '../Section.astro';
+import { site } from '../../config/site';
+import { useTranslations, type Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<Section id="contact" index="06" label={tr('contact.label')} title={tr('contact.title')}>
+  <!-- PLACEHOLDER: short invitation copy. Links below are final. -->
+  <div class="cluster" style="--cluster-gap: var(--space-3)">
+    <Button href={site.linkedin} external arrow>{tr('footer.linkedin')}</Button>
+    <Button href={site.github} variant="ghost" external arrow>{tr('footer.github')}</Button>
+  </div>
+</Section>

@@ -1,0 +1,17 @@
+---
+import Placeholder from '../Placeholder.astro';
+import Section from '../Section.astro';
+import { useTranslations, type Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<Section id="rust" index="02" label={tr('rust.label')} title={tr('rust.title')} raised>
+  <!-- PLACEHOLDER: Rust learning notes, the WASM field write-up, metrics. -->
+  <Placeholder note={tr('common.placeholder')} />
+</Section>

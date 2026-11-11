@@ -1,0 +1,106 @@
+---
+import Button from '../Button.astro';
+import { site } from '../../config/site';
+import { useTranslations, type Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+---
+
+<section id="hero" class="hero" aria-labelledby="hero-title">
+  <!--
+    Mount point for the Rust/WASM canvas. It fills the whole hero and sits
+    behind the text. Append a <canvas> here: it is stretched to 100% x 100%.
+    Until the WASM module loads, the CSS dot grid below is the fallback.
+  -->
+  <div id="field-canvas-mount" class="hero__field" aria-hidden="true"></div>
+
+  <div class="container hero__content">
+    <h1 id="hero-title" class="hero__name">{site.name}</h1>
+    <p class="hero__tagline">{tr('site.tagline')}</p>
+    <div class="cluster hero__actions">
+      <Button href="#work" arrow>{tr('hero.cta.work')}</Button>
+      <Button href="#contact" variant="ghost">{tr('hero.cta.contact')}</Button>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    display: grid;
+    min-height: 70vh;
+    min-height: 70svh;
+    border-bottom: var(--border-hairline);
+    isolation: isolate;
+  }
+
+  .hero > * {
+    grid-area: 1 / 1;
+  }
+
+  .hero__field {
+    position: relative;
+    z-index: 0;
+    width: 100%;
+    min-height: 70vh;
+    min-height: 70svh;
+    overflow: hidden;
+    /* Static fallback shown until (or instead of) the canvas. */
+    background-image: radial-gradient(circle at center, var(--color-line) 1px, transparent 1.5px);
+    background-size: 24px 24px;
+    background-position: center;
+  }
+
+  .hero__field :global(canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Fades the field into the page background so the text stays readable. */
+  .hero::after {
+    content: '';
+    grid-area: 1 / 1;
+    z-index: 1;
+    background: linear-gradient(to top, var(--color-bg) 0%, rgb(11 14 17 / 0.7) 35%, transparent 75%);
+    pointer-events: none;
+  }
+
+  .hero__content {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: var(--space-5);
+    padding-block: var(--space-9) var(--space-8);
+    /* Let pointer events reach the canvas except on real content. */
+    pointer-events: none;
+  }
+
+  .hero__content > * {
+    pointer-events: auto;
+  }
+
+  .hero__name {
+    max-width: 12ch;
+  }
+
+  .hero__tagline {
+    max-width: 44ch;
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  .hero__actions {
+    --cluster-gap: var(--space-3);
+    margin-top: var(--space-2);
+  }
+</style>

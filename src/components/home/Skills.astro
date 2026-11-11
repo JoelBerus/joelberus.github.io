@@ -1,0 +1,28 @@
+---
+import Section from '../Section.astro';
+import Tag from '../Tag.astro';
+import { useTranslations, type Locale } from '../../i18n';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+const tr = useTranslations(locale);
+
+// PLACEHOLDER: replace with the full, grouped skill list.
+const skills = ['TypeScript', 'React', 'Node.js'];
+---
+
+<Section id="skills" index="04" label={tr('skills.label')} title={tr('skills.title')}>
+  <ul class="cluster" role="list">
+    {
+      skills.map((skill) => (
+        <li>
+          <Tag>{skill}</Tag>
+        </li>
+      ))
+    }
+    <li><Tag variant="accent">Rust</Tag></li>
+  </ul>
+</Section>
