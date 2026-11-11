@@ -15,10 +15,29 @@ export interface FieldOptions {
   onStats?: (msPerStep: number) => void;
 }
 
+export interface FieldHandle {
+  /**
+   * Stops the loop, removes every listener and observer, frees the
+   * simulation inside WebAssembly and removes the canvas. Safe to call twice.
+   */
+  dispose(): void;
+}
+
+/**
+ * The running field of an element is kept on the element itself, under a
+ * registered symbol, so that a second `mountField` on the same element finds
+ * it even when this module was evaluated again (hot module replacement).
+ */
+const HANDLE = Symbol.for('portfolio.field.handle');
+type FieldHost = HTMLElement & { [HANDLE]?: FieldHandle };
+
 /** Same seed for every visitor: the field is deterministic by design. */
 const SEED = 2026;
 const MAX_DPR = 2;
-/** Layout of one particle in the shared buffer (see `Particle` in sim.rs). */
+/**
+ * Layout of one particle in the shared buffer. These indices are pinned on
+ * the Rust side by compile-time assertions (see `Particle` in sim.rs).
+ */
 const X = 0;
 const Y = 1;
 const PREV_X = 2;
@@ -65,12 +84,40 @@ function context2d(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
 /**
  * Loads the WebAssembly module and starts the field inside `mount`.
  * Rejects if the module cannot be loaded; the caller keeps the CSS fallback.
+ *
+ * An element holds one field at a time: mounting again disposes of the
+ * previous one first.
  */
-export async function mountField(mount: HTMLElement, options: FieldOptions = {}): Promise<void> {
+export async function mountField(mount: HTMLElement, options: FieldOptions = {}): Promise<FieldHandle> {
+  const host: FieldHost = mount;
+  host[HANDLE]?.dispose();
+
+  // Registered before the first `await`, so a second call that arrives while
+  // the module is still loading can cancel this one.
+  let disposed = false;
+  let teardown: (() => void) | null = null;
+  const handle: FieldHandle = {
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      if (host[HANDLE] === handle) delete host[HANDLE];
+      teardown?.();
+      teardown = null;
+    },
+  };
+  host[HANDLE] = handle;
+
+  let wasm: Awaited<ReturnType<typeof init>>;
+  try {
+    wasm = await init({ module_or_path: wasmUrl });
+  } catch (error) {
+    handle.dispose();
+    throw error;
+  }
+  if (disposed) return handle;
+
   const canvas = document.createElement('canvas');
   const ctx = context2d(canvas);
-
-  const wasm = await init({ module_or_path: wasmUrl });
   const stride = FlowField.stride();
 
   // Indexed by the particle's `kind`: 0 muted, 1 accent, 2 data.
@@ -198,6 +245,10 @@ export async function mountField(mount: HTMLElement, options: FieldOptions = {})
     ctx.lineCap = 'round';
 
     field.resize(width, height);
+    // The simulation scaled the particles to the new size, but the pointer
+    // it remembers is in the old coordinates. Drop it; the next pointer
+    // event sets it again.
+    field.setPointer(0, 0, false);
     const count = particleCount(width, height);
     if (count !== field.count()) {
       field.setCount(count);
@@ -213,40 +264,104 @@ export async function mountField(mount: HTMLElement, options: FieldOptions = {})
   function onPointerGone(): void {
     field.setPointer(0, 0, false);
   }
+  function onPointerUp(event: PointerEvent): void {
+    // A finger that lifts is gone; a mouse stays where it is.
+    if (event.pointerType !== 'mouse') onPointerGone();
+  }
+
+  function onMotionPreferenceChange(): void {
+    if (reducedMotion.matches) drawStaticFrame();
+    sync();
+  }
+
+  // The element keeps its CSS size when the pixel ratio changes (browser
+  // zoom, or the window moving to another screen), so the ResizeObserver does
+  // not fire. A `resolution` query matches one exact ratio and reports when
+  // it stops matching; it is then replaced by a query for the new ratio.
+  // Zooming also resizes the window, which is used as a second signal.
+  let dprQuery: MediaQueryList | null = null;
+  function watchPixelRatio(): void {
+    dprQuery?.removeEventListener('change', onPixelRatioChange);
+    dprQuery = matchMedia(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    dprQuery.addEventListener('change', onPixelRatioChange);
+  }
+  function onPixelRatioChange(): void {
+    if (dprQuery && !dprQuery.matches) watchPixelRatio();
+    // Above MAX_DPR the backing store does not change, so neither does the canvas.
+    if (Math.min(window.devicePixelRatio || 1, MAX_DPR) !== dpr) resize();
+  }
+
+  function onPageHide(event: PageTransitionEvent): void {
+    if (event.persisted) {
+      // Kept in the back/forward cache and possibly shown again: only pause.
+      if (frameId !== 0) {
+        cancelAnimationFrame(frameId);
+        frameId = 0;
+      }
+    } else {
+      handle.dispose();
+    }
+  }
+
+  const passive: AddEventListenerOptions = { passive: true };
 
   mount.append(canvas);
   resize();
 
   // Observed after the first manual resize; the initial callback is a no-op
   // because the size has not changed.
-  new ResizeObserver(() => {
+  const resizeObserver = new ResizeObserver(() => {
     if (mount.clientWidth !== width || mount.clientHeight !== height) resize();
-  }).observe(mount);
+  });
+  resizeObserver.observe(mount);
 
-  new IntersectionObserver((entries) => {
+  const intersectionObserver = new IntersectionObserver((entries) => {
     onScreen = entries.some((entry) => entry.isIntersecting);
     sync();
-  }).observe(mount);
-
-  document.addEventListener('visibilitychange', sync);
-  reducedMotion.addEventListener('change', () => {
-    if (reducedMotion.matches) drawStaticFrame();
-    sync();
   });
+  intersectionObserver.observe(mount);
 
-  pointerTarget.addEventListener('pointermove', onPointerMove, { passive: true });
-  pointerTarget.addEventListener('pointerdown', onPointerMove, { passive: true });
-  pointerTarget.addEventListener('pointerleave', onPointerGone, { passive: true });
-  pointerTarget.addEventListener('pointercancel', onPointerGone, { passive: true });
-  pointerTarget.addEventListener(
-    'pointerup',
-    (event) => {
-      // A finger that lifts is gone; a mouse stays where it is.
-      if (event.pointerType !== 'mouse') onPointerGone();
-    },
-    { passive: true },
-  );
+  watchPixelRatio();
+  document.addEventListener('visibilitychange', sync);
+  reducedMotion.addEventListener('change', onMotionPreferenceChange);
+  window.addEventListener('resize', onPixelRatioChange, passive);
+  window.addEventListener('pagehide', onPageHide);
+  window.addEventListener('pageshow', sync);
+
+  pointerTarget.addEventListener('pointermove', onPointerMove, passive);
+  pointerTarget.addEventListener('pointerdown', onPointerMove, passive);
+  pointerTarget.addEventListener('pointerleave', onPointerGone, passive);
+  pointerTarget.addEventListener('pointercancel', onPointerGone, passive);
+  pointerTarget.addEventListener('pointerup', onPointerUp, passive);
+
+  teardown = () => {
+    // Everything that could call into the simulation goes first; `free` goes
+    // last, because any call on a freed FlowField throws.
+    if (frameId !== 0) cancelAnimationFrame(frameId);
+    frameId = 0;
+    resizeObserver.disconnect();
+    intersectionObserver.disconnect();
+    dprQuery?.removeEventListener('change', onPixelRatioChange);
+    dprQuery = null;
+    document.removeEventListener('visibilitychange', sync);
+    reducedMotion.removeEventListener('change', onMotionPreferenceChange);
+    window.removeEventListener('resize', onPixelRatioChange);
+    window.removeEventListener('pagehide', onPageHide);
+    window.removeEventListener('pageshow', sync);
+    pointerTarget.removeEventListener('pointermove', onPointerMove);
+    pointerTarget.removeEventListener('pointerdown', onPointerMove);
+    pointerTarget.removeEventListener('pointerleave', onPointerGone);
+    pointerTarget.removeEventListener('pointercancel', onPointerGone);
+    pointerTarget.removeEventListener('pointerup', onPointerUp);
+
+    particles = new Float32Array(0);
+    viewStale = true;
+    field.free();
+    canvas.remove();
+    delete mount.dataset.fieldReady;
+  };
 
   mount.dataset.fieldReady = 'true';
   sync();
+  return handle;
 }
