@@ -5,10 +5,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+# No workflow-level permissions: each job asks for the least it needs.
+permissions: {}
 
 concurrency:
   group: pages
@@ -17,9 +15,18 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Read-only: configure-pages queries the Pages settings of the repository.
+      pages: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
+      # Fails early, with a clear message, when Pages is not enabled with
+      # "GitHub Actions" as its source (see README, "Deployment").
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
 
       # Reads the pnpm version from the "packageManager" field of package.json.
       - name: Setup pnpm
@@ -63,6 +70,9 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

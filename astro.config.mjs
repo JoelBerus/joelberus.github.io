@@ -16,6 +16,8 @@ export default defineConfig({
   },
   integrations: [
     sitemap({
+      // Static pages served from public/, which Astro does not discover.
+      customPages: ['https://joelberus.github.io/pocketgame/'],
       i18n: {
         defaultLocale: 'en',
         locales: { en: 'en', es: 'es' },

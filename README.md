@@ -63,6 +63,24 @@ src/
   wasm/field/                  wasm-pack output (git-ignored, rebuilt on demand)
 ```
 
+## Deployment
+
+`.github/workflows/deploy.yml` builds and publishes the site on every push to
+`main` (it can also be run by hand from the Actions tab).
+
+One-time setup: in the repository on GitHub, open **Settings → Pages** and set
+**Build and deployment → Source** to **GitHub Actions**. Until that is done the
+workflow stops at its "Configure Pages" step, because there is no Pages site to
+deploy to.
+
+The workflow has no workflow-level permissions. The `build` job only reads the
+repository and the Pages settings; the `deploy` job alone gets `pages: write`
+and `id-token: write`.
+
+`/pocketgame/` is a plain static folder, so Astro does not know about it. It is
+listed by hand under `customPages` in `astro.config.mjs` to appear in the
+sitemap.
+
 ## Adding a translated page
 
 Create the page under `src/pages/` and its twin under `src/pages/es/` with the
