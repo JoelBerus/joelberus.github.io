@@ -96,14 +96,86 @@ fn clamp_count(count: u32) -> usize {
 mod tests {
     use super::*;
 
+    /// What a `Float32Array` over the exposed region has to cover: exactly
+    /// the particle slice, start to end.
+    fn assert_view_covers_the_particles(field: &FlowField) {
+        let particles = field.inner.particles();
+        let range = particles.as_ptr_range();
+        assert_eq!(field.particles_ptr(), range.start.cast::<f32>());
+        assert_eq!(
+            field.particles_len(),
+            field.count() * FlowField::stride(),
+            "length is count * stride"
+        );
+        let bytes = field.particles_len() as usize * size_of::<f32>();
+        assert_eq!(range.end as usize - range.start as usize, bytes);
+    }
+
     #[test]
     fn buffer_view_matches_the_particles() {
         let field = FlowField::new(300.0, 200.0, 64, 1);
         assert_eq!(field.count(), 64);
-        assert_eq!(field.particles_len(), 64 * FlowField::stride());
+        assert_eq!(FlowField::stride(), 8);
+        assert_eq!(field.particles_len(), 64 * 8);
+        assert_view_covers_the_particles(&field);
+    }
+
+    #[test]
+    fn pointer_is_stable_across_step_resize_and_pointer_moves() {
+        let mut field = FlowField::new(300.0, 200.0, 64, 1);
+        let ptr = field.particles_ptr();
+        let len = field.particles_len();
+
+        for i in 0..600 {
+            field.step(1.0 / 60.0);
+            if i % 50 == 0 {
+                field.resize(200.0 + i as f32, 900.0 - i as f32);
+                field.set_pointer(i as f32, 10.0, i % 100 == 0);
+            }
+            // JavaScript keeps its view across all of these calls.
+            assert_eq!(field.particles_ptr(), ptr);
+            assert_eq!(field.particles_len(), len);
+        }
+        assert_view_covers_the_particles(&field);
+    }
+
+    /// `set_count` is the one call after which JavaScript must rebuild its
+    /// view. Whether the buffer really moves is up to the allocator, so the
+    /// test does not assert that it does. It asserts the contract instead:
+    /// read again after `set_count`, the pointer and length describe the live
+    /// buffer, whatever happened to the old one.
+    #[test]
+    fn pointer_and_length_are_valid_again_after_set_count() {
+        let mut field = FlowField::new(300.0, 200.0, 64, 1);
+        let old_len = field.particles_len();
+
+        for count in [4_000, 64, 0, 1, MAX_PARTICLES, 300] {
+            field.set_count(count);
+            assert_eq!(field.count(), count);
+            assert_view_covers_the_particles(&field);
+            field.step(1.0 / 60.0);
+            assert_view_covers_the_particles(&field);
+        }
+        // The length changed even if the address happened not to, so a view
+        // built before `set_count` is wrong either way.
+        assert_ne!(field.particles_len(), old_len);
+    }
+
+    #[test]
+    fn layout_indices_match_the_documented_order() {
+        // [x, y, prev_x, prev_y, vx, vy, life, kind], as read by mount.ts.
         assert_eq!(
-            field.particles_ptr(),
-            field.inner.particles().as_ptr().cast::<f32>()
+            [
+                Particle::X,
+                Particle::Y,
+                Particle::PREV_X,
+                Particle::PREV_Y,
+                Particle::VX,
+                Particle::VY,
+                Particle::LIFE,
+                Particle::KIND
+            ],
+            [0, 1, 2, 3, 4, 5, 6, 7]
         );
     }
 

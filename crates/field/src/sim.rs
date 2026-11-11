@@ -43,7 +43,8 @@ const DATA_SHARE: f32 = 0.05;
 /// One particle.
 ///
 /// `#[repr(C)]` fixes the field order and, because every field is an `f32`,
-/// guarantees there is no padding. That is what allows the WebAssembly layer
+/// there is no padding (both are asserted at compile time below). That is
+/// what allows the WebAssembly layer
 /// to expose a `&[Particle]` to JavaScript as a flat `Float32Array` with
 /// [`Particle::STRIDE`] floats per particle, without copying anything.
 #[repr(C)]
@@ -67,6 +68,18 @@ pub struct Particle {
 impl Particle {
     /// Number of `f32` values per particle in the flat buffer.
     pub const STRIDE: usize = 8;
+
+    /// Index of each field inside one particle of the flat buffer. The same
+    /// numbers are written in `mount.ts`; the assertions below this `impl`
+    /// tie them to the real struct layout.
+    pub const X: usize = 0;
+    pub const Y: usize = 1;
+    pub const PREV_X: usize = 2;
+    pub const PREV_Y: usize = 3;
+    pub const VX: usize = 4;
+    pub const VY: usize = 5;
+    pub const LIFE: usize = 6;
+    pub const KIND: usize = 7;
 
     pub const MUTED: f32 = 0.0;
     pub const ACCENT: f32 = 1.0;
@@ -98,9 +111,26 @@ impl Particle {
     }
 }
 
-// Checked at compile time: if someone adds a non-f32 field, the build fails
-// here instead of JavaScript silently reading garbage.
-const _: () = assert!(size_of::<Particle>() == Particle::STRIDE * size_of::<f32>());
+// The layout contract with JavaScript, checked at compile time. The renderer
+// (`src/components/field/mount.ts`) reads the buffer as a `Float32Array` and
+// hard-codes these indices, so moving, adding or retyping a field has to fail
+// the build here instead of making JavaScript silently read garbage.
+const _: () = {
+    use core::mem::offset_of;
+    const F32: usize = size_of::<f32>();
+
+    assert!(size_of::<Particle>() == Particle::STRIDE * F32);
+    assert!(align_of::<Particle>() == align_of::<f32>());
+
+    assert!(offset_of!(Particle, x) == Particle::X * F32);
+    assert!(offset_of!(Particle, y) == Particle::Y * F32);
+    assert!(offset_of!(Particle, prev_x) == Particle::PREV_X * F32);
+    assert!(offset_of!(Particle, prev_y) == Particle::PREV_Y * F32);
+    assert!(offset_of!(Particle, vx) == Particle::VX * F32);
+    assert!(offset_of!(Particle, vy) == Particle::VY * F32);
+    assert!(offset_of!(Particle, life) == Particle::LIFE * F32);
+    assert!(offset_of!(Particle, kind) == Particle::KIND * F32);
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct Pointer {
@@ -129,7 +159,10 @@ impl Field {
     /// Creates a field of `width` x `height` pixels with `count` particles.
     ///
     /// Two fields created with the same arguments and driven with the same
-    /// sequence of calls hold bit-identical particles.
+    /// sequence of calls hold identical particles, compared with exact float
+    /// equality. That is tested for one build on one platform; nothing here
+    /// checks that a native build and a WebAssembly build agree with each
+    /// other.
     pub fn new(width: f32, height: f32, count: usize, seed: u32) -> Self {
         let mut field = Self {
             width: sanitize_size(width),
@@ -217,8 +250,9 @@ impl Field {
 
     /// Changes the field size, scaling every particle to the new bounds.
     ///
-    /// Scaling (rather than respawning) keeps the distribution even and does
-    /// not consume random numbers, so a resize does not reshuffle the scene.
+    /// Scaling (rather than respawning) keeps every particle at the same
+    /// relative position and does not consume random numbers, so a resize
+    /// does not reshuffle the scene.
     pub fn resize(&mut self, width: f32, height: f32) {
         let width = sanitize_size(width);
         let height = sanitize_size(height);
@@ -351,7 +385,8 @@ mod tests {
         run(&mut a, 600);
         run(&mut b, 600);
 
-        // Exact float equality on purpose: determinism means bit-identical.
+        // Exact float equality on purpose: within one build, the same calls
+        // must give the same floats, not merely close ones.
         assert_eq!(a.particles(), b.particles());
         assert_eq!(a, b);
     }
@@ -375,7 +410,7 @@ mod tests {
     }
 
     #[test]
-    fn particles_actually_move_and_respawn() {
+    fn particles_actually_move() {
         let mut field = Field::new(640.0, 360.0, 300, 4);
         let start = field.particles().to_vec();
         run(&mut field, 120);
@@ -386,11 +421,113 @@ mod tests {
             .filter(|(before, after)| before.x != after.x || before.y != after.y)
             .count();
         assert!(moved > 290, "only {moved} of 300 particles moved");
+    }
 
-        // After more than MAX_LIFETIME seconds nobody has its original life.
-        run(&mut field, (MAX_LIFETIME / DT) as usize);
-        assert!(field.particles().iter().all(|p| p.life <= MAX_LIFETIME));
-        assert_eq!(field.count(), 300);
+    /// Steps once and returns the indices of the particles that respawned.
+    ///
+    /// `life` only ever decreases while a particle is alive, so a `life` that
+    /// went up is a respawn and nothing else.
+    fn step_and_find_respawns(field: &mut Field) -> Vec<usize> {
+        let lives: Vec<f32> = field.particles().iter().map(|p| p.life).collect();
+        field.step(DT);
+        field
+            .particles()
+            .iter()
+            .zip(lives)
+            .enumerate()
+            .filter(|(_, (p, life_before))| p.life > *life_before)
+            .map(|(i, _)| i)
+            .collect()
+    }
+
+    #[test]
+    fn particles_respawn_when_their_life_runs_out() {
+        const COUNT: usize = 300;
+        let mut field = Field::new(640.0, 360.0, COUNT, 4);
+        let mut respawns = vec![0u32; COUNT];
+        let mut fresh_checked = 0;
+
+        // A little longer than the longest possible life.
+        let steps = (MAX_LIFETIME / DT) as usize + 10;
+        for _ in 0..steps {
+            let lives_before: Vec<f32> = field.particles().iter().map(|p| p.life).collect();
+            for i in step_and_find_respawns(&mut field) {
+                respawns[i] += 1;
+
+                // A respawned particle is a fresh one: at rest, with a full
+                // life, and with a zero-length segment so that the renderer
+                // does not draw a line across the screen.
+                let p = field.particles()[i];
+                assert_eq!((p.prev_x, p.prev_y), (p.x, p.y));
+                assert_eq!((p.vx, p.vy), (0.0, 0.0));
+                assert!((MIN_LIFETIME..MAX_LIFETIME).contains(&p.life));
+                fresh_checked += 1;
+            }
+            // Nobody outlives its life: whoever was about to expire is new.
+            for (p, life_before) in field.particles().iter().zip(lives_before) {
+                assert!(life_before - DT > 0.0 || p.life >= MIN_LIFETIME);
+            }
+        }
+
+        assert!(fresh_checked > 0);
+        assert!(
+            respawns.iter().all(|&n| n >= 1),
+            "every particle respawns within MAX_LIFETIME"
+        );
+        // Lives last between 3 and 9 seconds, so about 1.5 respawns each.
+        let total: u32 = respawns.iter().sum();
+        assert!(
+            (COUNT as u32..COUNT as u32 * 4).contains(&total),
+            "{total} respawns"
+        );
+        assert_eq!(field.count(), COUNT);
+    }
+
+    #[test]
+    fn particles_respawn_when_they_leave_the_field() {
+        // A small field with the pointer in the middle pushing outwards. The
+        // run is shorter than the minimum life (3 s), so no particle can
+        // expire: every respawn seen here is a particle that left the field.
+        let mut field = Field::new(40.0, 40.0, 200, 12);
+        field.set_pointer(20.0, 20.0, true);
+        let mut exits = 0;
+        for _ in 0..(MIN_LIFETIME / DT) as usize - 10 {
+            exits += step_and_find_respawns(&mut field).len();
+            assert_in_bounds(&field);
+        }
+        assert!(exits > 200, "only {exits} particles left the field");
+    }
+
+    #[test]
+    fn respawns_are_deterministic() {
+        let mut a = Field::new(640.0, 360.0, 300, 4);
+        let mut b = Field::new(640.0, 360.0, 300, 4);
+        let mut other_seed = Field::new(640.0, 360.0, 300, 5);
+        let (mut log_a, mut log_b, mut log_other) = (Vec::new(), Vec::new(), Vec::new());
+
+        for step in 0..(MAX_LIFETIME / DT) as usize {
+            log_a.extend(
+                step_and_find_respawns(&mut a)
+                    .into_iter()
+                    .map(|i| (step, i)),
+            );
+            log_b.extend(
+                step_and_find_respawns(&mut b)
+                    .into_iter()
+                    .map(|i| (step, i)),
+            );
+            log_other.extend(
+                step_and_find_respawns(&mut other_seed)
+                    .into_iter()
+                    .map(|i| (step, i)),
+            );
+        }
+
+        assert!(log_a.len() >= 300);
+        // Same particles respawn on the same steps, at the same places.
+        assert_eq!(log_a, log_b);
+        assert_eq!(a, b);
+        assert_ne!(log_a, log_other);
     }
 
     #[test]
