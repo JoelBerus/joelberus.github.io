@@ -1,0 +1,41 @@
+---
+/** Small mono chip for technologies and metadata. Content goes in the slot. */
+interface Props {
+  /** `default` neutral, `accent` oxide, `data` cyan. */
+  variant?: 'default' | 'accent' | 'data';
+  class?: string;
+}
+
+const { variant = 'default', class: className } = Astro.props;
+---
+
+<span class:list={['tag', `tag--${variant}`, className]}><slot /></span>
+
+<style>
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2em 0.6em;
+    border: 1px solid var(--tag-line, var(--color-line));
+    border-radius: var(--radius-xs);
+    background: var(--tag-bg, transparent);
+    color: var(--tag-color, var(--color-text-muted));
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .tag--accent {
+    --tag-line: var(--color-accent-line);
+    --tag-bg: var(--color-accent-soft);
+    --tag-color: var(--color-accent);
+  }
+
+  .tag--data {
+    --tag-line: var(--color-data-line);
+    --tag-bg: var(--color-data-soft);
+    --tag-color: var(--color-data);
+  }
+</style>

@@ -1,0 +1,356 @@
+---
+import '@fontsource-variable/geist';
+import '@fontsource-variable/geist-mono';
+import '../styles/tokens.css';
+import '../styles/global.css';
+
+import { navSections, site } from '../config/site';
+import {
+  getAlternateLocale,
+  getAlternatePath,
+  locales,
+  localizePath,
+  ogLocales,
+  resolveLocale,
+  useTranslations,
+  type Locale,
+} from '../i18n';
+
+interface Props {
+  /** Page title. Omit on the home page to use "<name> — <role>". */
+  title?: string;
+  /** Meta description. Defaults to the localized site description. */
+  description?: string;
+  /** Forces a locale. Defaults to the one Astro resolves from the URL. */
+  locale?: Locale;
+  /** Site-relative or absolute URL of the social share image (optional). */
+  image?: string;
+  /** Open Graph type. */
+  ogType?: 'website' | 'article';
+  /** Excludes the page from search engines and drops hreflang alternates. */
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  locale = resolveLocale(Astro.currentLocale),
+  image,
+  ogType = 'website',
+  noindex = false,
+} = Astro.props;
+
+const tr = useTranslations(locale);
+
+const pageTitle = title ? `${title} · ${site.name}` : `${site.name} — ${tr('site.role')}`;
+const pageDescription = description ?? tr('site.description');
+
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const alternates = locales.map((code) => ({
+  code,
+  href: new URL(getAlternatePath(Astro.url.pathname, code), Astro.site).href,
+}));
+const defaultAlternate = alternates.find((alt) => alt.code === 'en');
+const imageUrl = image ? new URL(image, Astro.site).href : undefined;
+
+const homePath = localizePath('/', locale);
+const otherLocale = getAlternateLocale(locale);
+const otherLocalePath = getAlternatePath(Astro.url.pathname, otherLocale);
+const year = new Date().getFullYear();
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={pageDescription} />
+    <meta name="author" content={site.name} />
+    <meta name="theme-color" content={site.themeColor} />
+    <meta name="color-scheme" content="dark" />
+    <meta name="generator" content={Astro.generator} />
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <link rel="canonical" href={canonical.href} />
+    {
+      !noindex &&
+        alternates.map((alt) => <link rel="alternate" hreflang={alt.code} href={alt.href} />)
+    }
+    {
+      !noindex && defaultAlternate && (
+        <link rel="alternate" hreflang="x-default" href={defaultAlternate.href} />
+      )
+    }
+
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <link rel="sitemap" href={`${import.meta.env.BASE_URL}sitemap-index.xml`} />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonical.href} />
+    <meta property="og:locale" content={ogLocales[locale]} />
+    <meta property="og:locale:alternate" content={ogLocales[otherLocale]} />
+    {imageUrl && <meta property="og:image" content={imageUrl} />}
+
+    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">{tr('a11y.skip')}</a>
+
+    <header class="site-header">
+      <div class="container site-header__inner">
+        <a class="brand" href={homePath} aria-label={tr('a11y.home')}>
+          <span class="brand__mark" aria-hidden="true"></span>
+          <span class="brand__name">{site.name}</span>
+        </a>
+
+        <nav class="site-nav" aria-label={tr('a11y.mainNav')}>
+          <ul role="list">
+            {
+              navSections.map((id) => (
+                <li>
+                  <a href={`${homePath}#${id}`}>{tr(`nav.${id}`)}</a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+
+        <div class="lang-switch" role="group" aria-label={tr('a11y.langSwitch')}>
+          {
+            locales.map((code) =>
+              code === locale ? (
+                <span class="lang-switch__item" aria-current="true">
+                  <span aria-hidden="true">{code}</span>
+                  <span class="visually-hidden">{tr(`lang.${code}`)}</span>
+                </span>
+              ) : (
+                <a class="lang-switch__item" href={otherLocalePath} hreflang={code} lang={code}>
+                  <span aria-hidden="true">{code}</span>
+                  <span class="visually-hidden">{code === 'es' ? 'Español' : 'English'}</span>
+                </a>
+              ),
+            )
+          }
+        </div>
+      </div>
+    </header>
+
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <p class="mono-label">&copy; {year} {site.name}</p>
+        <ul class="site-footer__links mono-label" role="list">
+          <li>
+            <a href={site.github} rel="me noopener">{tr('footer.github')}</a>
+          </li>
+          <li>
+            <a href={site.linkedin} rel="me noopener">{tr('footer.linkedin')}</a>
+          </li>
+        </ul>
+        <p class="mono-label site-footer__built">{tr('footer.built')}</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  /* ---------- Header ---------- */
+
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-header);
+    border-bottom: var(--border-hairline);
+    background: var(--color-bg);
+  }
+
+  .site-header__inner {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'brand lang'
+      'nav nav';
+    align-items: center;
+    column-gap: var(--space-5);
+  }
+
+  .brand {
+    grid-area: brand;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--header-height);
+    justify-self: start;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-semibold);
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .brand:hover {
+    color: var(--color-text);
+  }
+
+  /* Small oxide square: the only ornament in the header. */
+  .brand__mark {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 1px;
+    background: var(--color-accent);
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .brand:hover .brand__mark {
+    transform: rotate(45deg);
+  }
+
+  .site-nav {
+    grid-area: nav;
+    min-width: 0;
+    margin-inline: calc(-1 * var(--gutter));
+    border-top: var(--border-hairline);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .site-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-nav ul {
+    display: flex;
+    gap: var(--space-5);
+    width: max-content;
+    padding-inline: var(--gutter);
+  }
+
+  .site-nav a,
+  .lang-switch__item {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: var(--weight-medium);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--color-text-muted);
+  }
+
+  .site-nav a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.5rem;
+    white-space: nowrap;
+  }
+
+  .site-nav a:hover {
+    color: var(--color-text);
+  }
+
+  .lang-switch {
+    grid-area: lang;
+    display: inline-flex;
+    align-items: center;
+    border: var(--border-hairline);
+    border-radius: var(--radius-sm);
+  }
+
+  .lang-switch__item {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.25rem;
+    min-height: 1.75rem;
+    padding-inline: var(--space-2);
+    border-radius: calc(var(--radius-sm) - 1px);
+  }
+
+  .lang-switch__item[aria-current='true'] {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  a.lang-switch__item:hover {
+    color: var(--color-accent);
+  }
+
+  @media (min-width: 52rem) {
+    .site-header__inner {
+      grid-template-columns: 1fr auto auto;
+      grid-template-areas: 'brand nav lang';
+      column-gap: var(--space-6);
+    }
+
+    .site-nav {
+      margin-inline: 0;
+      border-top: 0;
+      overflow: visible;
+    }
+
+    .site-nav ul {
+      gap: var(--space-6);
+      padding-inline: 0;
+    }
+
+    .site-nav a {
+      min-height: var(--header-height);
+    }
+  }
+
+  /* The header is two rows tall on small screens: keep anchors clear of it. */
+  @media (max-width: 51.99rem) {
+    :global(html) {
+      scroll-padding-top: calc(var(--header-height) + 2.5rem + var(--space-5));
+    }
+  }
+
+  main:focus {
+    outline: none;
+  }
+
+  /* ---------- Footer ---------- */
+
+  .site-footer {
+    margin-top: var(--space-section);
+    border-top: var(--border-hairline);
+  }
+
+  .site-footer__inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-6);
+    padding-block: var(--space-6);
+  }
+
+  .site-footer__links {
+    display: flex;
+    gap: var(--space-5);
+  }
+
+  .site-footer__links a {
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .site-footer__links a:hover {
+    color: var(--color-accent);
+  }
+
+  .site-footer__built {
+    color: var(--color-text-subtle);
+  }
+</style>

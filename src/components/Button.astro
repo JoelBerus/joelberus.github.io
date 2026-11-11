@@ -1,0 +1,105 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+
+/**
+ * Link styled as a button. Always renders an <a>.
+ * Extra attributes (aria-*, data-*, download...) are forwarded.
+ */
+interface Props extends Omit<HTMLAttributes<'a'>, 'href' | 'class'> {
+  href: string;
+  /** `primary` solid oxide, `ghost` hairline outline. */
+  variant?: 'primary' | 'ghost';
+  size?: 'md' | 'sm';
+  /** Opens in a new tab with safe rel values. */
+  external?: boolean;
+  /** Appends a trailing arrow that nudges on hover. */
+  arrow?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  variant = 'primary',
+  size = 'md',
+  external = false,
+  arrow = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const externalAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+---
+
+<a
+  href={href}
+  class:list={['button', `button--${variant}`, `button--${size}`, className]}
+  {...externalAttrs}
+  {...rest}
+>
+  <span><slot /></span>
+  {
+    arrow && (
+      <span class="button__arrow" aria-hidden="true">
+        {external ? '↗' : '→'}
+      </span>
+    )
+  }
+</a>
+
+<style>
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
+    min-height: 2.75rem;
+    padding: 0 1.25em;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: var(--weight-medium);
+    letter-spacing: 0.01em;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+      background-color var(--duration-fast) ease,
+      border-color var(--duration-fast) ease,
+      color var(--duration-fast) ease;
+  }
+
+  .button--sm {
+    min-height: 2.25rem;
+    padding: 0 0.9em;
+    font-size: var(--text-xs);
+  }
+
+  .button--primary {
+    background: var(--color-accent);
+    color: var(--color-accent-ink);
+  }
+
+  .button--primary:hover {
+    background: var(--color-accent-hover);
+    color: var(--color-accent-ink);
+  }
+
+  .button--ghost {
+    border-color: var(--color-line-strong);
+    color: var(--color-text);
+  }
+
+  .button--ghost:hover {
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+  }
+
+  .button__arrow {
+    transition: transform var(--duration-base) var(--ease-out);
+  }
+
+  .button:hover .button__arrow {
+    transform: translateX(3px);
+  }
+</style>

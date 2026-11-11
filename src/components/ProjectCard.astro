@@ -1,0 +1,195 @@
+---
+import Tag from './Tag.astro';
+
+/**
+ * Project teaser. The whole card is one link (the title link is stretched).
+ *
+ * Per-project theming is done through CSS custom properties set from props:
+ *   --card-accent  hover border, eyebrow and arrow color
+ *   --card-bg      background of the media area
+ *
+ * Slots:
+ *   media  image/illustration shown in the media area (optional).
+ *          Use an <img> or <Image />; it is fitted with object-fit: cover.
+ */
+interface Props {
+  title: string;
+  summary: string;
+  href: string;
+  tags?: string[];
+  /** Small mono text above the title, e.g. "2025 · Case study". */
+  eyebrow?: string;
+  /** Any CSS color. Defaults to the oxide accent. */
+  accent?: string;
+  /** Any CSS background value for the media area. Defaults to the raised surface. */
+  background?: string;
+  /** Opens the link in a new tab (e.g. a GitHub repo). */
+  external?: boolean;
+  /** Heading level for the title. */
+  headingLevel?: 'h3' | 'h4';
+  class?: string;
+}
+
+const {
+  title,
+  summary,
+  href,
+  tags = [],
+  eyebrow,
+  accent,
+  background,
+  external = false,
+  headingLevel: Heading = 'h3',
+  class: className,
+} = Astro.props;
+
+const style = [accent && `--card-accent: ${accent}`, background && `--card-bg: ${background}`]
+  .filter(Boolean)
+  .join('; ');
+const linkAttrs = external ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+const hasMedia = Astro.slots.has('media');
+---
+
+<article class:list={['project-card', className]} style={style || undefined}>
+  {
+    hasMedia && (
+      <div class="project-card__media">
+        <slot name="media" />
+      </div>
+    )
+  }
+  <div class="project-card__body">
+    {eyebrow && <p class="project-card__eyebrow mono-label">{eyebrow}</p>}
+    <Heading class="project-card__title">
+      <a class="project-card__link" href={href} {...linkAttrs}>{title}</a>
+      <span class="project-card__arrow" aria-hidden="true">{external ? '↗' : '→'}</span>
+    </Heading>
+    <p class="project-card__summary">{summary}</p>
+    {
+      tags.length > 0 && (
+        <ul class="project-card__tags" role="list">
+          {tags.map((tag) => (
+            <li>
+              <Tag>{tag}</Tag>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</article>
+
+<style>
+  .project-card {
+    --card-accent: var(--color-accent);
+    --card-bg: var(--color-surface-2);
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border: var(--border-hairline);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    overflow: hidden;
+    transition: border-color var(--duration-base) ease;
+  }
+
+  .project-card:hover,
+  .project-card:focus-within {
+    border-color: var(--card-accent);
+  }
+
+  .project-card__media {
+    aspect-ratio: 16 / 10;
+    border-bottom: var(--border-hairline);
+    background: var(--card-bg);
+    overflow: hidden;
+  }
+
+  .project-card__media :global(img),
+  .project-card__media :global(picture),
+  .project-card__media :global(svg),
+  .project-card__media :global(video) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--duration-slow) var(--ease-out);
+  }
+
+  .project-card:hover .project-card__media :global(img) {
+    transform: scale(1.02);
+  }
+
+  .project-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: var(--space-5);
+  }
+
+  .project-card__eyebrow {
+    color: var(--card-accent);
+  }
+
+  .project-card__title {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-4);
+    font-size: var(--text-xl);
+  }
+
+  .project-card__link {
+    text-decoration: none;
+  }
+
+  .project-card__link:hover {
+    color: inherit;
+  }
+
+  /* Stretch the title link over the whole card. */
+  .project-card__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .project-card__link:focus-visible {
+    outline: none;
+  }
+
+  .project-card:has(.project-card__link:focus-visible) {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .project-card__arrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-base);
+    color: var(--color-text-subtle);
+    transition:
+      transform var(--duration-base) var(--ease-out),
+      color var(--duration-base) ease;
+  }
+
+  .project-card:hover .project-card__arrow {
+    color: var(--card-accent);
+    transform: translateX(3px);
+  }
+
+  .project-card__summary {
+    color: var(--color-text-muted);
+    font-size: var(--text-base);
+    line-height: 1.55;
+  }
+
+  .project-card__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: auto;
+    padding-top: var(--space-3);
+  }
+</style>

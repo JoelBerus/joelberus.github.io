@@ -1,0 +1,124 @@
+---
+/**
+ * Page section with a numbered mono label ("01 / WORK"), a heading and a slot.
+ *
+ * Slots:
+ *   default  section body
+ *   lead     optional intro paragraph next to the heading
+ *   aside    optional element aligned to the right of the header (e.g. a link)
+ */
+interface Props {
+  /** Anchor id used by the header nav. */
+  id: string;
+  /** Two-digit section number, e.g. "01". */
+  index: string;
+  /** Short label shown after the number, e.g. "Work". Rendered uppercase. */
+  label: string;
+  /** Section heading (h2). */
+  title: string;
+  /** Uses the raised surface as the section background. */
+  raised?: boolean;
+  class?: string;
+}
+
+const { id, index, label, title, raised = false, class: className } = Astro.props;
+const headingId = `${id}-title`;
+---
+
+<section id={id} class:list={['section', { 'section--raised': raised }, className]} aria-labelledby={headingId}>
+  <div class="container">
+    <header class="section__header">
+      <p class="section__label mono-label">
+        <span class="section__index">{index}</span>
+        <span class="section__sep" aria-hidden="true">/</span>
+        <span>{label}</span>
+      </p>
+      <div class="section__heading">
+        <h2 id={headingId}>{title}</h2>
+        {
+          Astro.slots.has('lead') && (
+            <div class="lead">
+              <slot name="lead" />
+            </div>
+          )
+        }
+      </div>
+      {
+        Astro.slots.has('aside') && (
+          <div class="section__aside">
+            <slot name="aside" />
+          </div>
+        )
+      }
+    </header>
+    <div class="section__body">
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .section {
+    padding-block: var(--space-section) 0;
+  }
+
+  .section--raised {
+    margin-top: var(--space-section);
+    padding-block: var(--space-section);
+    border-block: var(--border-hairline);
+    background: var(--color-surface);
+  }
+
+  .section__header {
+    display: grid;
+    gap: var(--space-4) var(--space-6);
+    padding-top: var(--space-4);
+    border-top: var(--border-hairline);
+  }
+
+  .section--raised .section__header {
+    border-top-color: var(--color-line-strong);
+  }
+
+  .section__label {
+    display: flex;
+    gap: 0.6em;
+  }
+
+  .section__index {
+    color: var(--color-accent);
+  }
+
+  .section__sep {
+    color: var(--color-text-subtle);
+  }
+
+  .section__heading {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .section__body {
+    margin-top: var(--space-7);
+  }
+
+  @media (min-width: 52rem) {
+    /* Label sits in a fixed left rail; heading starts on the content column. */
+    .section__header {
+      grid-template-columns: 11rem minmax(0, 1fr) auto;
+      align-items: start;
+    }
+
+    .section__label {
+      padding-top: 0.75em;
+    }
+
+    .section__aside {
+      align-self: end;
+    }
+
+    .section__body {
+      margin-top: var(--space-8);
+    }
+  }
+</style>
