@@ -23,8 +23,10 @@ interface Props {
   accent?: string;
   /** Any CSS background value for the media area. Defaults to the raised surface. */
   background?: string;
-  /** Opens the link in a new tab (e.g. a GitHub repo). */
+  /** Opens the link in a new tab (e.g. a GitHub repo). Requires `externalLabel`. */
   external?: boolean;
+  /** Visually hidden note for external links, e.g. "opens in a new tab". */
+  externalLabel?: string;
   /** Heading level for the title. */
   headingLevel?: 'h3' | 'h4';
   class?: string;
@@ -39,6 +41,7 @@ const {
   accent,
   background,
   external = false,
+  externalLabel,
   headingLevel: Heading = 'h3',
   class: className,
 } = Astro.props;
@@ -61,7 +64,10 @@ const hasMedia = Astro.slots.has('media');
   <div class="project-card__body">
     {eyebrow && <p class="project-card__eyebrow mono-label">{eyebrow}</p>}
     <Heading class="project-card__title">
-      <a class="project-card__link" href={href} {...linkAttrs}>{title}</a>
+      <a class="project-card__link" href={href} {...linkAttrs}>
+        {title}
+        {external && externalLabel && <span class="visually-hidden">({externalLabel})</span>}
+      </a>
       <span class="project-card__arrow" aria-hidden="true">{external ? '↗' : '→'}</span>
     </Heading>
     <p class="project-card__summary">{summary}</p>

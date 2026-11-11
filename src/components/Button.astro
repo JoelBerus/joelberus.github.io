@@ -10,7 +10,10 @@ interface Props extends Omit<HTMLAttributes<'a'>, 'href' | 'class'> {
   /** `primary` solid oxide, `ghost` hairline outline. */
   variant?: 'primary' | 'ghost';
   size?: 'md' | 'sm';
-  /** Opens in a new tab with safe rel values. */
+  /**
+   * Opens in a new tab with safe rel values. Add a visually hidden
+   * "(opens in a new tab)" note to the slot (see `a11y.external`).
+   */
   external?: boolean;
   /** Appends a trailing arrow that nudges on hover. */
   arrow?: boolean;

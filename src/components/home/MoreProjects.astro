@@ -1,6 +1,7 @@
 ---
-import Placeholder from '../Placeholder.astro';
+import ProjectCard from '../ProjectCard.astro';
 import Section from '../Section.astro';
+import { sideProjects } from '../../data/projects';
 import { useTranslations, type Locale } from '../../i18n';
 
 interface Props {
@@ -12,6 +13,30 @@ const tr = useTranslations(locale);
 ---
 
 <Section id="projects" index="05" label={tr('projects.label')} title={tr('projects.title')}>
-  <!-- PLACEHOLDER: grid of smaller ProjectCard items. -->
-  <Placeholder note={tr('common.placeholder')} />
+  <p slot="lead">{tr('projects.lead')}</p>
+
+  <ul class="grid projects" role="list">
+    {
+      sideProjects.map((project) => (
+        <li>
+          <ProjectCard
+            title={project.name}
+            summary={project.summary[locale]}
+            href={project.href}
+            eyebrow={project.kind[locale]}
+            accent={project.accent}
+            tags={project.tags}
+            external
+            externalLabel={tr('a11y.external')}
+          />
+        </li>
+      ))
+    }
+  </ul>
 </Section>
+
+<style>
+  .projects {
+    --grid-min: 20rem;
+  }
+</style>

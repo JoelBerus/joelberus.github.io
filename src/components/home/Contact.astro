@@ -2,6 +2,7 @@
 import Button from '../Button.astro';
 import Section from '../Section.astro';
 import { site } from '../../config/site';
+import { profile } from '../../data/profile';
 import { useTranslations, type Locale } from '../../i18n';
 
 interface Props {
@@ -10,12 +11,139 @@ interface Props {
 
 const { locale } = Astro.props;
 const tr = useTranslations(locale);
+
+const mailto = `mailto:${profile.email}`;
+/** "https://github.com/JoelBerus/" -> "github.com/JoelBerus". */
+const displayUrl = (url: string): string =>
+  url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 ---
 
 <Section id="contact" index="06" label={tr('contact.label')} title={tr('contact.title')}>
-  <!-- PLACEHOLDER: short invitation copy. Links below are final. -->
-  <div class="cluster" style="--cluster-gap: var(--space-3)">
-    <Button href={site.linkedin} external arrow>{tr('footer.linkedin')}</Button>
-    <Button href={site.github} variant="ghost" external arrow>{tr('footer.github')}</Button>
+  <div class="contact">
+    <div class="contact__intro">
+      <p class="contact__lead">{tr('contact.lead')}</p>
+      <div class="cluster contact__actions">
+        <Button href={mailto} arrow>{tr('contact.cta.email')}</Button>
+        <Button href={site.linkedin} variant="ghost" external arrow>
+          {tr('footer.linkedin')}{' '}
+          <span class="visually-hidden">({tr('a11y.external')})</span>
+        </Button>
+      </div>
+    </div>
+
+    <dl class="details">
+      <div class="details__row">
+        <dt class="mono-label">{tr('contact.email')}</dt>
+        <dd><a href={mailto}>{profile.email}</a></dd>
+      </div>
+      <div class="details__row">
+        <dt class="mono-label">{tr('footer.linkedin')}</dt>
+        <dd>
+          <a href={site.linkedin} target="_blank" rel="noopener noreferrer">
+            {displayUrl(site.linkedin)}
+            <span class="visually-hidden">({tr('a11y.external')})</span>
+          </a>
+        </dd>
+      </div>
+      <div class="details__row">
+        <dt class="mono-label">{tr('footer.github')}</dt>
+        <dd>
+          <a href={site.github} target="_blank" rel="noopener noreferrer">
+            {displayUrl(site.github)}
+            <span class="visually-hidden">({tr('a11y.external')})</span>
+          </a>
+        </dd>
+      </div>
+      <div class="details__row">
+        <dt class="mono-label">{tr('contact.location')}</dt>
+        <dd>{profile.location[locale]}</dd>
+      </div>
+      <div class="details__row">
+        <dt class="mono-label">{tr('contact.languages')}</dt>
+        <dd>
+          <ul class="details__languages" role="list">
+            {
+              profile.languages.map((language) => (
+                <li>
+                  {language.name[locale]}
+                  <span class="details__level">({language.level[locale]})</span>
+                </li>
+              ))
+            }
+          </ul>
+        </dd>
+      </div>
+    </dl>
   </div>
 </Section>
+
+<style>
+  .contact {
+    display: grid;
+    gap: var(--space-7);
+  }
+
+  .contact__intro {
+    display: grid;
+    gap: var(--space-5);
+    align-content: start;
+  }
+
+  .contact__lead {
+    max-width: 34ch;
+    font-size: var(--text-2xl);
+    line-height: 1.3;
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .contact__actions {
+    --cluster-gap: var(--space-3);
+  }
+
+  .details {
+    display: grid;
+    align-content: start;
+    border-bottom: var(--border-hairline);
+  }
+
+  .details__row {
+    display: grid;
+    gap: var(--space-1);
+    padding-block: var(--space-3);
+    border-top: var(--border-hairline);
+  }
+
+  /* Label and value side by side once the email fits on one line. */
+  @media (min-width: 30rem) {
+    .details__row {
+      grid-template-columns: 6.5rem minmax(0, 1fr);
+      gap: var(--space-4);
+      align-items: baseline;
+    }
+  }
+
+  .details dd {
+    min-width: 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .details__languages {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .details__level {
+    color: var(--color-text-muted);
+  }
+
+  @media (min-width: 52rem) {
+    .contact {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: var(--space-7);
+      /* Start on the content column, next to the label rail of the header. */
+      margin-left: calc(11rem + var(--space-6));
+    }
+  }
+</style>

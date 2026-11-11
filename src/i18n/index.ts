@@ -9,8 +9,8 @@ export const defaultLocale: Locale = 'en';
 
 const dictionaries: Record<Locale, Dictionary> = { en, es };
 
-/** Open Graph locale codes for each site locale. */
-export const ogLocales: Record<Locale, string> = { en: 'en_US', es: 'es_LA' };
+/** Open Graph locale codes for each site locale. Spanish targets Ecuador. */
+export const ogLocales: Record<Locale, string> = { en: 'en_US', es: 'es_EC' };
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === 'string' && (locales as readonly string[]).includes(value);

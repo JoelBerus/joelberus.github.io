@@ -1,6 +1,7 @@
 ---
 import Section from '../Section.astro';
 import Tag from '../Tag.astro';
+import { skillGroups, type SkillName } from '../../data/skills';
 import { useTranslations, type Locale } from '../../i18n';
 
 interface Props {
@@ -10,19 +11,116 @@ interface Props {
 const { locale } = Astro.props;
 const tr = useTranslations(locale);
 
-// PLACEHOLDER: replace with the full, grouped skill list.
-const skills = ['TypeScript', 'React', 'Node.js'];
+const nameOf = (skill: SkillName): string => (typeof skill === 'string' ? skill : skill[locale]);
 ---
 
 <Section id="skills" index="04" label={tr('skills.label')} title={tr('skills.title')}>
-  <ul class="cluster" role="list">
+  <p slot="lead">{tr('skills.lead')}</p>
+
+  <ul class="groups" role="list">
     {
-      skills.map((skill) => (
-        <li>
-          <Tag>{skill}</Tag>
+      skillGroups.map((group) => (
+        <li class:list={['group', { 'group--learning': group.learning }]}>
+          <div class="group__head">
+            <h3 class="mono-label group__label">{group.label[locale]}</h3>
+            {group.learning && <span class="group__badge">{tr('skills.learning.badge')}</span>}
+          </div>
+          <div class="group__body">
+            <ul class="cluster" role="list">
+              {group.items.map((skill) => (
+                <li>
+                  <Tag variant={group.learning ? 'accent' : 'default'} class="skill">
+                    {nameOf(skill)}
+                  </Tag>
+                </li>
+              ))}
+            </ul>
+            {group.learning && <p class="group__note">{tr('skills.learning.note')}</p>}
+          </div>
         </li>
       ))
     }
-    <li><Tag variant="accent">Rust</Tag></li>
   </ul>
 </Section>
+
+<style>
+  .groups {
+    display: grid;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--space-3);
+    padding-block: var(--space-5);
+    border-top: var(--border-hairline);
+  }
+
+  .group__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+  }
+
+  .group__label {
+    color: var(--color-text);
+  }
+
+  .group__body {
+    display: grid;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .group :global(.skill) {
+    padding: 0.35em 0.75em;
+    font-size: var(--text-sm);
+    color: var(--color-text);
+  }
+
+  /* Learning: dashed outlines read as "not finished yet". */
+  .group--learning {
+    border-top: 1px dashed var(--color-accent-line);
+  }
+
+  .group--learning .group__label {
+    color: var(--color-accent);
+  }
+
+  .group--learning :global(.skill) {
+    border-style: dashed;
+    background: transparent;
+    color: var(--color-accent);
+  }
+
+  .group__badge {
+    padding: 0.15em 0.5em;
+    border-radius: var(--radius-xs);
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: var(--text-2xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+  }
+
+  .group__note {
+    max-width: 60ch;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  @media (min-width: 52rem) {
+    .group {
+      grid-template-columns: 11rem minmax(0, 1fr);
+      gap: var(--space-6);
+      align-items: start;
+    }
+
+    .group__head {
+      flex-direction: column;
+      align-items: flex-start;
+      padding-top: 0.45em;
+    }
+  }
+</style>

@@ -5,6 +5,7 @@ import '../styles/tokens.css';
 import '../styles/global.css';
 
 import { navSections, site } from '../config/site';
+import { profile } from '../data/profile';
 import {
   getAlternateLocale,
   getAlternatePath,
@@ -12,6 +13,7 @@ import {
   localizePath,
   ogLocales,
   resolveLocale,
+  stripLocale,
   useTranslations,
   type Locale,
 } from '../i18n';
@@ -23,7 +25,7 @@ interface Props {
   description?: string;
   /** Forces a locale. Defaults to the one Astro resolves from the URL. */
   locale?: Locale;
-  /** Site-relative or absolute URL of the social share image (optional). */
+  /** Site-relative or absolute URL of the social share image. Defaults to `/og.png`. */
   image?: string;
   /** Open Graph type. */
   ogType?: 'website' | 'article';
@@ -51,7 +53,34 @@ const alternates = locales.map((code) => ({
   href: new URL(getAlternatePath(Astro.url.pathname, code), Astro.site).href,
 }));
 const defaultAlternate = alternates.find((alt) => alt.code === 'en');
-const imageUrl = image ? new URL(image, Astro.site).href : undefined;
+
+// Social share image: 1200x630, falls back to the site-wide card.
+const defaultImage = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/og.png`;
+const imageUrl = new URL(image ?? defaultImage, Astro.site).href;
+const isDefaultImage = !image;
+
+// schema.org Person, only on the home page of each locale.
+const isHome = stripLocale(Astro.url.pathname) === '/';
+const personSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: site.name,
+  url: canonical.href,
+  image: new URL(defaultImage, Astro.site).href,
+  jobTitle: tr('site.role'),
+  description: tr('site.description'),
+  email: `mailto:${profile.email}`,
+  address: {
+    '@type': 'PostalAddress',
+    addressLocality: profile.city,
+    addressCountry: profile.countryCode,
+  },
+  knowsLanguage: profile.languages.map((language) => language.code),
+  knowsAbout: profile.knowsAbout,
+  sameAs: [site.github, site.linkedin],
+};
+// "<" is escaped so the JSON can never close the script element.
+const personJson = JSON.stringify(personSchema).replace(/</g, '\\u003c');
 
 const homePath = localizePath('/', locale);
 const otherLocale = getAlternateLocale(locale);
@@ -93,12 +122,25 @@ const year = new Date().getFullYear();
     <meta property="og:url" content={canonical.href} />
     <meta property="og:locale" content={ogLocales[locale]} />
     <meta property="og:locale:alternate" content={ogLocales[otherLocale]} />
-    {imageUrl && <meta property="og:image" content={imageUrl} />}
+    <meta property="og:image" content={imageUrl} />
+    {
+      isDefaultImage && (
+        <>
+          <meta property="og:image:type" content="image/png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content={tr('site.ogAlt')} />
+        </>
+      )
+    }
 
-    <meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
-    {imageUrl && <meta name="twitter:image" content={imageUrl} />}
+    <meta name="twitter:image" content={imageUrl} />
+    {isDefaultImage && <meta name="twitter:image:alt" content={tr('site.ogAlt')} />}
+
+    {isHome && <script is:inline type="application/ld+json" set:html={personJson} />}
 
     <slot name="head" />
   </head>
@@ -311,6 +353,32 @@ const year = new Date().getFullYear();
 
   /* The header is two rows tall on small screens: keep anchors clear of it. */
   @media (max-width: 51.99rem) {
+    /*
+     * Tighter labels so the five links fit a 375px phone in both locales.
+     * On narrower screens the row scrolls sideways, and the faded edges show
+     * that there is more to reach.
+     */
+    .site-nav {
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--gutter),
+        #000 calc(100% - var(--gutter)),
+        transparent
+      );
+    }
+
+    .site-nav ul {
+      gap: var(--space-3);
+      min-width: 100%;
+      justify-content: space-between;
+    }
+
+    .site-nav a {
+      font-size: var(--text-2xs);
+      letter-spacing: 0.04em;
+    }
+
     :global(html) {
       scroll-padding-top: calc(var(--header-height) + 2.5rem + var(--space-5));
     }
