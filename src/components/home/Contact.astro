@@ -1,7 +1,7 @@
 ---
 import Button from '../Button.astro';
 import Section from '../Section.astro';
-import { site } from '../../config/site';
+import { cvPath, sectionNumber, site } from '../../config/site';
 import { profile } from '../../data/profile';
 import { useTranslations, type Locale } from '../../i18n';
 
@@ -18,7 +18,7 @@ const displayUrl = (url: string): string =>
   url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
 ---
 
-<Section id="contact" index="06" label={tr('contact.label')} title={tr('contact.title')}>
+<Section id="contact" index={sectionNumber('contact')} label={tr('contact.label')} title={tr('contact.title')}>
   <div class="contact">
     <div class="contact__intro">
       <p class="contact__lead">{tr('contact.lead')}</p>
@@ -27,6 +27,9 @@ const displayUrl = (url: string): string =>
         <Button href={site.linkedin} variant="ghost" external arrow>
           {tr('footer.linkedin')}{' '}
           <span class="visually-hidden">({tr('a11y.external')})</span>
+        </Button>
+        <Button href={`${import.meta.env.BASE_URL}${cvPath[locale]}`} variant="ghost" download>
+          {tr('cv.download')}
         </Button>
       </div>
     </div>

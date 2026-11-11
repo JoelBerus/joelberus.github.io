@@ -1,5 +1,6 @@
 ---
 import Section from '../Section.astro';
+import { sectionNumber } from '../../config/site';
 import Tag from '../Tag.astro';
 import { skillGroups, type SkillName } from '../../data/skills';
 import { useTranslations, type Locale } from '../../i18n';
@@ -14,7 +15,7 @@ const tr = useTranslations(locale);
 const nameOf = (skill: SkillName): string => (typeof skill === 'string' ? skill : skill[locale]);
 ---
 
-<Section id="skills" index="04" label={tr('skills.label')} title={tr('skills.title')}>
+<Section id="skills" index={sectionNumber('skills')} label={tr('skills.label')} title={tr('skills.title')}>
   <p slot="lead">{tr('skills.lead')}</p>
 
   <ul class="groups" role="list">

@@ -53,12 +53,13 @@ src/
   components/home/             One file per home page section
   components/pages/Home.astro  Home page shared by both locales
   components/work/             WorkCard, Shot and the CaseStudy page
-  config/site.ts               Name, links, section ids
-  data/                        Typed content: profile, experience, skills, projects, rust
-  data/work/                   One file per case study (drupela, pocketgame) and their types
+  config/site.ts               Name, links, section order (ids, numbers, nav), CV paths
+  data/                        Typed content: profile, experience, skills, projects, rust, cv
+  data/work/                   One file per case study (drupela, asistente-hogar, pocketgame) and their types
   i18n/                        en.ts, es.ts and helpers (t, localizePath, ...)
   layouts/Base.astro           Head, header, footer
   pages/                       index, work/<slug> and their twins under es/, 404
+  pages/cv/[file].ts           Writes the CV PDFs at build time (see "CV" below)
   styles/                      tokens.css (design tokens), global.css
   wasm/field/                  wasm-pack output (git-ignored, rebuilt on demand)
 ```
@@ -81,6 +82,32 @@ and `id-token: write`.
 listed by hand under `customPages` in `astro.config.mjs` to appear in the
 sitemap.
 
+## Home page order
+
+`sectionIds` in `src/config/site.ts` is the order of the home page: `Home.astro`
+renders the sections in that order and each section takes its number
+("01 / EXPERIENCE") from `sectionNumber()`. `navSections` is the subset shown in
+the header. To move a section, change both lists and the order in `Home.astro`.
+
+"Selected work" shows the cases with `listedIn: 'work'`; a case with
+`listedIn: 'projects'` (PocketGame) appears as a card in "More projects"
+through `src/data/projects.ts`. The "next project" link cycles through
+`workCases` in `src/data/work/index.ts`.
+
+The public name of the home assistant project is the `ASSISTANT_NAME` constant
+in `src/data/work/asistente-hogar.ts`. Its screenshots come from a local build
+seeded with an invented household and simulated devices.
+
+## CV
+
+`/cv/joel-bermudez-acosta-cv-en.pdf` and `...-es.pdf` are generated on every
+build by `src/pages/cv/[file].ts` with pdfkit (no browser needed, so it runs in
+the deploy workflow as is). They are not committed. The content comes from
+`src/data/cv.ts`, which reads the same modules as the pages (profile,
+experience, skills, work cases), so the CV and the site cannot disagree. The
+endpoint shrinks the type until the CV fits on one A4 page and fails the build
+if it cannot.
+
 ## Adding a translated page
 
 Create the page under `src/pages/` and its twin under `src/pages/es/` with the
@@ -98,7 +125,7 @@ the build scripts and the `crates/field` Rust crate) is released under the
 
 **Not covered by the MIT license, all rights reserved:** the content of the
 site, meaning its texts, images, screenshots, logos and the brand assets of
-Drupela and PocketGame. That includes everything under `src/assets/work/` and
+Drupela and PocketGame, and the screenshots of Asistente Hogar. That includes everything under `src/assets/work/` and
 `public/pocketgame/`. Do not reuse them without written permission.
 
 The bundled fonts keep their own licenses: Quicksand

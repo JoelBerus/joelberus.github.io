@@ -1,7 +1,8 @@
 ---
 import Section from '../Section.astro';
+import { sectionNumber } from '../../config/site';
 import WorkCard from '../work/WorkCard.astro';
-import { workCases, workUi } from '../../data/work';
+import { featuredWork, workUi } from '../../data/work';
 import { useTranslations, type Locale } from '../../i18n';
 
 interface Props {
@@ -12,11 +13,11 @@ const { locale } = Astro.props;
 const tr = useTranslations(locale);
 ---
 
-<Section id="work" index="01" label={tr('work.label')} title={tr('work.title')}>
+<Section id="work" index={sectionNumber('work')} label={tr('work.label')} title={tr('work.title')}>
   <p slot="lead">{workUi.sectionLead[locale]}</p>
   <ul class="work-grid" role="list">
     {
-      workCases.map((work) => (
+      featuredWork.map((work) => (
         <li>
           <WorkCard work={work} locale={locale} />
         </li>

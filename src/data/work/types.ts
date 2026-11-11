@@ -4,7 +4,24 @@ import type { Locale } from '../../i18n';
 /** A value written once per site locale. */
 export type Localized<T> = Record<Locale, T>;
 
-export type WorkSlug = 'drupela' | 'pocketgame';
+export type WorkSlug = 'drupela' | 'asistente-hogar' | 'pocketgame';
+
+/**
+ * A chip in a card or in the stack list. Plain strings render as neutral
+ * tags; the object form carries a localized label and a highlighted variant.
+ */
+export type WorkTag = string | { label: Localized<string>; variant: 'accent' | 'data' };
+
+/** Marks a project where AI is part of the product or of how it is built. */
+export const AI_TAG: WorkTag = { label: { en: 'AI', es: 'IA' }, variant: 'data' };
+
+export function tagLabel(tag: WorkTag, locale: Locale): string {
+  return typeof tag === 'string' ? tag : tag.label[locale];
+}
+
+export function tagVariant(tag: WorkTag): 'default' | 'accent' | 'data' {
+  return typeof tag === 'string' ? 'default' : tag.variant;
+}
 
 /**
  * Product identity applied on top of the portfolio shell.
@@ -58,6 +75,8 @@ export interface WorkShot {
 export interface WorkCase {
   slug: WorkSlug;
   name: string;
+  /** Home section the case is listed in; the back link of the case page returns there. */
+  listedIn: 'work' | 'projects';
   theme: WorkTheme;
   /** Logo shown in the hero and on the home card. Empty `text` hides the wordmark text. */
   logo: { image: ImageMetadata; width: number; height: number; text?: string };
@@ -65,7 +84,7 @@ export interface WorkCase {
   // ---- Home card ----
   cardEyebrow: Localized<string>;
   cardSummary: Localized<string>;
-  cardTags: string[];
+  cardTags: WorkTag[];
 
   // ---- Case page ----
   metaDescription: Localized<string>;
@@ -101,7 +120,7 @@ export interface WorkCase {
     shots: WorkShot[];
   };
 
-  stack: { label: Localized<string>; items: string[] }[];
+  stack: { label: Localized<string>; items: WorkTag[] }[];
 
   /** Small print at the end of the page (e.g. trademark notice). */
   note?: Localized<string>;

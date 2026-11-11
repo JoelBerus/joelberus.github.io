@@ -1,6 +1,7 @@
 ---
 import Metric from '../Metric.astro';
 import Section from '../Section.astro';
+import { sectionNumber } from '../../config/site';
 import { education, roles } from '../../data/experience';
 import { highlights } from '../../data/profile';
 import { useTranslations, type Locale } from '../../i18n';
@@ -24,7 +25,7 @@ function formatMonth(iso: string): string {
 }
 ---
 
-<Section id="experience" index="03" label={tr('experience.label')} title={tr('experience.title')}>
+<Section id="experience" index={sectionNumber('experience')} label={tr('experience.label')} title={tr('experience.title')}>
   <p slot="lead">{tr('experience.lead')}</p>
 
   <h3 class="visually-hidden">{tr('experience.highlights')}</h3>

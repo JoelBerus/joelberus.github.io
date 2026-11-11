@@ -1,8 +1,9 @@
 ---
 import ProjectCard from '../ProjectCard.astro';
 import Section from '../Section.astro';
+import { sectionNumber } from '../../config/site';
 import { sideProjects } from '../../data/projects';
-import { useTranslations, type Locale } from '../../i18n';
+import { localizePath, useTranslations, type Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
@@ -12,7 +13,7 @@ const { locale } = Astro.props;
 const tr = useTranslations(locale);
 ---
 
-<Section id="projects" index="05" label={tr('projects.label')} title={tr('projects.title')}>
+<Section id="projects" index={sectionNumber('projects')} label={tr('projects.label')} title={tr('projects.title')}>
   <p slot="lead">{tr('projects.lead')}</p>
 
   <ul class="grid projects" role="list">
@@ -22,11 +23,11 @@ const tr = useTranslations(locale);
           <ProjectCard
             title={project.name}
             summary={project.summary[locale]}
-            href={project.href}
+            href={project.internal ? localizePath(project.href, locale) : project.href}
             eyebrow={project.kind[locale]}
             accent={project.accent}
             tags={project.tags}
-            external
+            external={!project.internal}
             externalLabel={tr('a11y.external')}
           />
         </li>
@@ -36,7 +37,28 @@ const tr = useTranslations(locale);
 </Section>
 
 <style>
+  /* Three cards: one column, then the first card across two, then a row of three. */
   .projects {
-    --grid-min: 20rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 40rem) {
+    .projects {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .projects > li:first-child {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .projects {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .projects > li:first-child {
+      grid-column: auto;
+    }
   }
 </style>

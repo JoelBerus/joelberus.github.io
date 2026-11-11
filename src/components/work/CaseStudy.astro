@@ -11,6 +11,8 @@ import {
   getNextWorkCase,
   getWorkCase,
   pick,
+  tagLabel,
+  tagVariant,
   workPath,
   workUi,
   type WorkSlug,
@@ -29,6 +31,10 @@ interface Props {
 const { slug, locale } = Astro.props;
 const work = getWorkCase(slug);
 const next = getNextWorkCase(slug);
+const back =
+  work.listedIn === 'work'
+    ? { href: '/#work', label: workUi.back[locale] }
+    : { href: '/#projects', label: workUi.backProjects[locale] };
 const { theme, logo } = work;
 
 const firstShot = work.heroShots[0];
@@ -75,9 +81,9 @@ const resolveHref = (link: (typeof work.links)[number]) =>
   <article class="case" style={themeStyle}>
     <header class="case-hero">
       <div class="container">
-        <a class="case-hero__back mono-label" href={localizePath('/#work', locale)}>
+        <a class="case-hero__back mono-label" href={localizePath(back.href, locale)}>
           <span aria-hidden="true">←</span>
-          {workUi.back[locale]}
+          {back.label}
         </a>
 
         <div class:list={['case-hero__grid', `case-hero__grid--${heroLayout}`]}>
@@ -93,9 +99,10 @@ const resolveHref = (link: (typeof work.links)[number]) =>
               {logo.text && <span>{logo.text}</span>}
             </h1>
             <p class="case-hero__pitch">{work.pitch[locale]}</p>
-            <div class="case-hero__actions cluster" style="--cluster-gap: var(--space-3)">
-              {
-                work.links.map((link, index) => (
+            {
+              work.links.length > 0 && (
+                <div class="case-hero__actions cluster" style="--cluster-gap: var(--space-3)">
+                  {work.links.map((link, index) => (
                   <Button
                     href={resolveHref(link)}
                     variant={index === 0 ? 'primary' : 'ghost'}
@@ -107,9 +114,10 @@ const resolveHref = (link: (typeof work.links)[number]) =>
                       <span class="visually-hidden">({t(locale, 'a11y.external')})</span>
                     )}
                   </Button>
-                ))
-              }
-            </div>
+                  ))}
+                </div>
+              )
+            }
           </div>
 
           <div class:list={['case-hero__visual', `case-hero__visual--${heroLayout}`]}>
@@ -278,7 +286,7 @@ const resolveHref = (link: (typeof work.links)[number]) =>
                 <ul class="cluster" role="list">
                   {group.items.map((item) => (
                     <li>
-                      <Tag>{item}</Tag>
+                      <Tag variant={tagVariant(item)}>{tagLabel(item, locale)}</Tag>
                     </li>
                   ))}
                 </ul>

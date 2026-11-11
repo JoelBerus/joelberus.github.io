@@ -3,15 +3,17 @@
  * `es` is typed against `en`, so a missing or extra key fails type-checking.
  */
 import type { Locale } from '../i18n';
+import { ASSISTANT_DESCRIPTOR, ASSISTANT_NAME } from './work/asistente-hogar';
 
 export const FIELD_SOURCE_URL = 'https://github.com/JoelBerus/joelberus.github.io/tree/main/crates/field';
 
 const en = {
   hero: {
-    tagline: 'Full Stack Developer — TypeScript, React, Node.js · learning Rust',
+    tagline: 'Full Stack Developer — React, React Native, TypeScript, Node.js',
     support:
-      '5+ years building web and mobile apps for banking and e-commerce. I also design and ship my own products.',
-    ctaWork: 'See work',
+      '5+ years building web and mobile apps for banking and e-commerce, most recently at SoFi (formerly Technisys). I also design and ship my own products.',
+    facts: ['Guayaquil, Ecuador · Remote', 'English B2 · Spanish native', 'Open to full-stack roles'],
+    ctaExperience: 'See experience',
     ctaContact: 'Contact',
     chipLabel: 'Rust → WebAssembly',
     chipSizeTitle: 'Size of the .wasm module, gzip-compressed',
@@ -51,9 +53,9 @@ const en = {
       tags: ['Rust', 'WebAssembly', 'wasm-bindgen', 'Canvas 2D'],
     },
     assistant: {
-      eyebrow: 'In progress · not public yet',
-      title: 'asistente-hogar: a home assistant core',
-      body: 'A backend for my own household, and my way of learning Rust beyond a single crate: data modelling, error handling and async HTTP.',
+      eyebrow: 'In progress · private repository',
+      title: `${ASSISTANT_NAME}: ${ASSISTANT_DESCRIPTOR.en}`,
+      body: 'My way of learning Rust beyond a single crate: data modelling, error handling and async HTTP.',
       facts: [
         {
           term: 'Core',
@@ -65,10 +67,10 @@ const en = {
         },
         {
           term: 'Scope',
-          detail: 'Tasks and routines for the people living in the house.',
+          detail: 'Tasks, routines, an AI chat and an encrypted private memory for each person.',
         },
       ],
-      note: 'The repository is private while the core takes shape.',
+      link: 'Read the case',
       tags: ['Rust', 'SQLite', 'axum'],
     },
     honesty:
@@ -80,10 +82,11 @@ type Copy = typeof en;
 
 const es: Copy = {
   hero: {
-    tagline: 'Desarrollador Full Stack — TypeScript, React, Node.js · aprendiendo Rust',
+    tagline: 'Desarrollador Full Stack — React, React Native, TypeScript, Node.js',
     support:
-      'Más de 5 años creando aplicaciones web y móviles para banca y comercio electrónico. También diseño y lanzo mis propios productos.',
-    ctaWork: 'Ver trabajo',
+      'Más de 5 años creando aplicaciones web y móviles para banca y comercio electrónico, los últimos en SoFi (antes Technisys). También diseño y lanzo mis propios productos.',
+    facts: ['Guayaquil, Ecuador · Remoto', 'Inglés B2 · Español nativo', 'Disponible para puestos full stack'],
+    ctaExperience: 'Ver experiencia',
     ctaContact: 'Contacto',
     chipLabel: 'Rust → WebAssembly',
     chipSizeTitle: 'Tamaño del módulo .wasm comprimido con gzip',
@@ -123,9 +126,9 @@ const es: Copy = {
       tags: ['Rust', 'WebAssembly', 'wasm-bindgen', 'Canvas 2D'],
     },
     assistant: {
-      eyebrow: 'En desarrollo · todavía no es público',
-      title: 'asistente-hogar: el núcleo de un asistente para el hogar',
-      body: 'Un backend para mi propia casa, y mi forma de aprender Rust más allá de un solo crate: modelado de datos, manejo de errores y HTTP asíncrono.',
+      eyebrow: 'En desarrollo · repositorio privado',
+      title: `${ASSISTANT_NAME}: ${ASSISTANT_DESCRIPTOR.es}`,
+      body: 'Mi forma de aprender Rust más allá de un solo crate: modelado de datos, manejo de errores y HTTP asíncrono.',
       facts: [
         {
           term: 'Núcleo',
@@ -138,10 +141,10 @@ const es: Copy = {
         },
         {
           term: 'Alcance',
-          detail: 'Tareas y rutinas para las personas que viven en la casa.',
+          detail: 'Tareas, rutinas, un chat con IA y una memoria privada cifrada para cada persona.',
         },
       ],
-      note: 'El repositorio es privado mientras el núcleo toma forma.',
+      link: 'Ver el caso',
       tags: ['Rust', 'SQLite', 'axum'],
     },
     honesty:

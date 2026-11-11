@@ -16,6 +16,7 @@ import type { WorkCase } from './types';
 export const pocketgame: WorkCase = {
   slug: 'pocketgame',
   name: 'PocketGame',
+  listedIn: 'projects',
   theme: {
     heroBg: '#100d1b',
     heroText: '#f8f5ff',

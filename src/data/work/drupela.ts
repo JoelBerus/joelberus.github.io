@@ -4,7 +4,7 @@ import shotOwnerToday from '../../assets/work/drupela/turnos-hoy-movil.png';
 import shotMyWeek from '../../assets/work/drupela/turnos-mi-semana.png';
 import shotClock from '../../assets/work/drupela/turnos-reloj.png';
 import shotWeek from '../../assets/work/drupela/turnos-semana.png';
-import type { WorkCase } from './types';
+import { AI_TAG, type WorkCase } from './types';
 
 /**
  * Drupela case study. Brand colors come from the product's brand guide:
@@ -14,6 +14,7 @@ import type { WorkCase } from './types';
 export const drupela: WorkCase = {
   slug: 'drupela',
   name: 'Drupela',
+  listedIn: 'work',
   theme: {
     heroBg: '#50182D',
     heroText: '#FFFDF9',
@@ -44,7 +45,7 @@ export const drupela: WorkCase = {
     en: "A modular system for restaurants and cafés in Ecuador that joins the venue's own operations with a diner app where only people who actually paid can rate each dish.",
     es: 'Un sistema modular para restaurantes y cafeterías de Ecuador que une la operación del local con una app para comensales donde solo quien pagó puede evaluar cada plato.',
   },
-  cardTags: ['TypeScript', 'Fastify', 'PostgreSQL', 'React', 'PWA'],
+  cardTags: [AI_TAG, 'TypeScript', 'Fastify', 'PostgreSQL', 'React', 'PWA'],
 
   metaDescription: {
     en: 'Case study: Drupela, a modular SaaS for restaurants and cafés in Ecuador. TypeScript monorepo, Fastify, PostgreSQL with row-level security and 2,000+ automated tests.',
@@ -308,14 +309,21 @@ export const drupela: WorkCase = {
           es: 'Más de 2.000 pruebas automatizadas, con CI en GitHub Actions.',
         },
       },
+      {
+        title: { en: 'AI-assisted workflow', es: 'Flujo de trabajo asistido por IA' },
+        body: {
+          en: 'Built with an AI-assisted workflow: coding agents write and independent models audit each phase. The product itself has no AI features.',
+          es: 'Construido con un flujo de trabajo asistido por IA: agentes de código escriben y modelos independientes auditan cada fase. El producto en sí no tiene funciones de IA.',
+        },
+      },
     ],
   },
 
   gallery: {
     title: { en: 'Turnos, the first module', es: 'Turnos, el primer módulo' },
     lead: {
-      en: "Real screens of the product running with synthetic data in a test environment. The banner at the top is that environment's own notice, and the interface is in Spanish.",
-      es: 'Pantallas reales del producto con datos sintéticos en un entorno de prueba. El aviso superior es el del propio entorno.',
+      en: 'Real screens of the product running in a test environment. Every person, venue and number shown is synthetic, and the interface is in Spanish.',
+      es: 'Pantallas reales del producto en un entorno de prueba. Todas las personas, locales y cifras que aparecen son datos sintéticos.',
     },
     shots: [
       {
@@ -385,6 +393,10 @@ export const drupela: WorkCase = {
     {
       label: { en: 'Language and tooling', es: 'Lenguaje y herramientas' },
       items: ['TypeScript', 'Node.js', 'pnpm', 'Turborepo', 'GitHub Actions'],
+    },
+    {
+      label: { en: 'Process', es: 'Proceso' },
+      items: [AI_TAG, 'Coding agents', 'Independent model audits'],
     },
     {
       label: { en: 'Backend', es: 'Backend' },

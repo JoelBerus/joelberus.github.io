@@ -2,7 +2,7 @@
 import Tag from '../Tag.astro';
 import Shot from './Shot.astro';
 import { localizePath, type Locale } from '../../i18n';
-import { workPath, workUi, type WorkCase } from '../../data/work';
+import { tagLabel, tagVariant, workPath, workUi, type WorkCase } from '../../data/work';
 
 /**
  * Large project card for the home "Selected work" section.
@@ -72,7 +72,7 @@ const style = [
       {
         work.cardTags.map((tag) => (
           <li>
-            <Tag>{tag}</Tag>
+            <Tag variant={tagVariant(tag)}>{tagLabel(tag, locale)}</Tag>
           </li>
         ))
       }

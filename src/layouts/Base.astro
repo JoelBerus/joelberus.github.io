@@ -384,6 +384,17 @@ const year = new Date().getFullYear();
     }
   }
 
+  /* The five Spanish labels are longer: on a phone they need every pixel. */
+  @media (max-width: 26rem) {
+    .site-nav ul {
+      gap: var(--space-2);
+    }
+
+    .site-nav a {
+      letter-spacing: 0;
+    }
+  }
+
   main:focus {
     outline: none;
   }

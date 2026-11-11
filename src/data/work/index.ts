@@ -1,13 +1,17 @@
+import { asistenteHogar } from './asistente-hogar';
 import { drupela } from './drupela';
 import { pocketgame } from './pocketgame';
 import type { WorkCase, WorkSlug } from './types';
 
 export { workUi } from './ui';
-export { pick } from './types';
-export type { Localized, WorkCase, WorkShot, WorkSlug, WorkTheme } from './types';
+export { AI_TAG, pick, tagLabel, tagVariant } from './types';
+export type { Localized, WorkCase, WorkShot, WorkSlug, WorkTag, WorkTheme } from './types';
 
-/** Case studies in the order they appear on the home page. */
-export const workCases: readonly WorkCase[] = [drupela, pocketgame];
+/** Every case study, in the order the "next project" links cycle through them. */
+export const workCases: readonly WorkCase[] = [drupela, asistenteHogar, pocketgame];
+
+/** Cases shown as large cards in the home "Selected work" section, in order. */
+export const featuredWork: readonly WorkCase[] = workCases.filter((item) => item.listedIn === 'work');
 
 export function getWorkCase(slug: WorkSlug): WorkCase {
   const found = workCases.find((item) => item.slug === slug);

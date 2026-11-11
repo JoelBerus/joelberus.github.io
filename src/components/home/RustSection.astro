@@ -1,10 +1,13 @@
 ---
 import Button from '../Button.astro';
 import Section from '../Section.astro';
+import { sectionNumber } from '../../config/site';
 import Tag from '../Tag.astro';
 import { wasmSize } from '../field/wasm-size';
 import { FIELD_SOURCE_URL, rustContent } from '../../data/rust';
-import { useTranslations, type Locale } from '../../i18n';
+import { asistenteHogar } from '../../data/work/asistente-hogar';
+import { workPath } from '../../data/work';
+import { localizePath, useTranslations, type Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
@@ -18,12 +21,18 @@ const copy = rustContent[locale].rust;
 const withSizes = (text: string) => text.replace('{gzip}', wasmSize.gzipKb).replace('{raw}', wasmSize.rawKb);
 
 const items = [
-  { ...copy.crate, index: 'A', tone: 'accent' as const, note: undefined },
-  { ...copy.assistant, index: 'B', tone: 'default' as const, link: undefined },
+  { ...copy.crate, index: 'A', tone: 'accent' as const, href: FIELD_SOURCE_URL, external: true },
+  {
+    ...copy.assistant,
+    index: 'B',
+    tone: 'default' as const,
+    href: localizePath(workPath(asistenteHogar.slug), locale),
+    external: false,
+  },
 ];
 ---
 
-<Section id="rust" index="02" label={tr('rust.label')} title={tr('rust.title')} raised>
+<Section id="rust" index={sectionNumber('rust')} label={tr('rust.label')} title={tr('rust.title')} raised>
   <p slot="lead">{copy.lead}</p>
 
   <div class="rust-grid">
@@ -54,13 +63,10 @@ const items = [
                 </li>
               ))}
             </ul>
-            {item.link && (
-              <Button href={FIELD_SOURCE_URL} variant="ghost" size="sm" external arrow>
-                {item.link}{' '}
-                <span class="visually-hidden">({tr('a11y.external')})</span>
-              </Button>
-            )}
-            {item.note && <p class="rust-item__note">{item.note}</p>}
+            <Button href={item.href} variant="ghost" size="sm" external={item.external} arrow>
+              {item.link}
+              {item.external && <span class="visually-hidden"> ({tr('a11y.external')})</span>}
+            </Button>
           </div>
         </article>
       ))
@@ -144,12 +150,6 @@ const items = [
     gap: var(--space-4);
     margin-top: auto;
     padding-top: var(--space-2);
-  }
-
-  .rust-item__note {
-    font-family: var(--font-mono);
-    font-size: var(--text-xs);
-    color: var(--color-text-subtle);
   }
 
   .rust-honesty {

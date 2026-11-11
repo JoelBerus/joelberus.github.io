@@ -1,18 +1,31 @@
 import type { Localized } from './profile';
+import { workPath } from './work';
+import { pocketgame } from './work/pocketgame';
 
 export interface SideProject {
   name: string;
   kind: Localized;
   summary: Localized;
   tags: string[];
-  /** Public repository URL. */
+  /** Public repository URL, or a locale-agnostic site path when `internal` is set. */
   href: string;
+  /** The link is a page of this site (a case study), to be localized. */
+  internal?: boolean;
   /** Any CSS color for the card accent. */
   accent: string;
 }
 
-/** Public side projects shown in the "More projects" section. */
+/** Side projects shown in the "More projects" section. */
 export const sideProjects: SideProject[] = [
+  {
+    name: pocketgame.name,
+    kind: { en: 'Emulator · Case study', es: 'Emulador · Caso' },
+    summary: pocketgame.cardSummary,
+    tags: ['C11', 'SwiftUI', 'Metal', 'Kotlin', 'NDK/JNI'],
+    href: workPath(pocketgame.slug),
+    internal: true,
+    accent: pocketgame.theme.mark,
+  },
   {
     name: 'market-brief',
     kind: { en: 'Agent Skill', es: 'Agent Skill' },

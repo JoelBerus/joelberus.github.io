@@ -19,10 +19,11 @@ const { locale } = Astro.props;
 
 <Base locale={locale}>
   <Hero locale={locale} />
-  <Work locale={locale} />
-  <RustSection locale={locale} />
+  <!-- Same order as `sectionIds` in src/config/site.ts. -->
   <Experience locale={locale} />
+  <Work locale={locale} />
   <Skills locale={locale} />
   <MoreProjects locale={locale} />
+  <RustSection locale={locale} />
   <Contact locale={locale} />
 </Base>
