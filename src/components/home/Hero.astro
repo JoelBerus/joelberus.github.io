@@ -1,40 +1,96 @@
 ---
 import Button from '../Button.astro';
+import { wasmSize } from '../field/wasm-size';
 import { site } from '../../config/site';
-import { useTranslations, type Locale } from '../../i18n';
+import { FIELD_SOURCE_URL, rustContent } from '../../data/rust';
+import type { Locale } from '../../i18n';
 
 interface Props {
   locale: Locale;
 }
 
 const { locale } = Astro.props;
-const tr = useTranslations(locale);
+const copy = rustContent[locale].hero;
 ---
 
 <section id="hero" class="hero" aria-labelledby="hero-title">
   <!--
-    Mount point for the Rust/WASM canvas. It fills the whole hero and sits
-    behind the text. Append a <canvas> here: it is stretched to 100% x 100%.
-    Until the WASM module loads, the CSS dot grid below is the fallback.
+    Mount point for the Rust/WASM canvas (see src/components/field/mount.ts).
+    It fills the whole hero and sits behind the text. Until the module loads,
+    or if it never does, the CSS dot grid below is what the visitor sees.
   -->
   <div id="field-canvas-mount" class="hero__field" aria-hidden="true"></div>
 
   <div class="container hero__content">
     <h1 id="hero-title" class="hero__name">{site.name}</h1>
-    <p class="hero__tagline">{tr('site.tagline')}</p>
-    <div class="cluster hero__actions">
-      <Button href="#work" arrow>{tr('hero.cta.work')}</Button>
-      <Button href="#contact" variant="ghost">{tr('hero.cta.contact')}</Button>
+    <p class="hero__tagline">{copy.tagline}</p>
+    <p class="hero__support">{copy.support}</p>
+
+    <div class="hero__footer">
+      <div class="cluster hero__actions">
+        <Button href="#work" arrow>{copy.ctaWork}</Button>
+        <Button href="#contact" variant="ghost">{copy.ctaContact}</Button>
+      </div>
+
+      <!-- The size is measured at build time; ms/step is filled in by the script below. -->
+      <p class="hero__chip">
+        <span class="hero__chip-dot" aria-hidden="true"></span>
+        <span>{copy.chipLabel}</span>
+        <span class="hero__chip-sep" aria-hidden="true">·</span>
+        <span title={copy.chipSizeTitle}>{wasmSize.gzipKb} kB</span>
+        <span class="hero__chip-live" title={copy.chipStepTitle} data-field-stats hidden>
+          <span class="hero__chip-sep" aria-hidden="true">·</span>
+          <span class="hero__chip-value" data-field-ms></span>
+          {copy.chipStepUnit}
+        </span>
+        <span class="hero__chip-sep" aria-hidden="true">·</span>
+        <a href={FIELD_SOURCE_URL} aria-label={copy.chipSourceLabel}>{copy.chipSource}</a>
+      </p>
     </div>
   </div>
 </section>
+
+<script>
+  const mount = document.getElementById('field-canvas-mount');
+  const hero = document.getElementById('hero');
+
+  if (mount && hero) {
+    const stats = hero.querySelector<HTMLElement>('[data-field-stats]');
+    const value = hero.querySelector<HTMLElement>('[data-field-ms]');
+
+    const onStats = (msPerStep: number) => {
+      if (!stats || !value) return;
+      value.textContent = msPerStep < 0.005 ? '<0.01' : msPerStep.toFixed(2);
+      stats.hidden = false;
+    };
+
+    const start = () => {
+      // The simulation is a separate chunk: neither the WebAssembly module
+      // nor its glue code is on the critical path of the page.
+      import('../field/mount')
+        .then(({ mountField }) => mountField(mount, { pointerTarget: hero, onStats }))
+        .catch(() => {
+          // No WebAssembly, a blocked request, an old browser: the CSS dot
+          // grid stays as the background and nothing else changes.
+        });
+    };
+
+    // Wait until the browser has painted and is idle before fetching anything.
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(start, { timeout: 1500 });
+    } else {
+      setTimeout(start, 200);
+    }
+  }
+</script>
 
 <style>
   .hero {
     position: relative;
     display: grid;
-    min-height: 70vh;
-    min-height: 70svh;
+    /* Capped so a very tall viewport does not turn the hero into an empty wall. */
+    min-height: min(76vh, 52rem);
+    min-height: min(76svh, 52rem);
     border-bottom: var(--border-hairline);
     isolation: isolate;
   }
@@ -47,8 +103,8 @@ const tr = useTranslations(locale);
     position: relative;
     z-index: 0;
     width: 100%;
-    min-height: 70vh;
-    min-height: 70svh;
+    min-height: min(76vh, 52rem);
+    min-height: min(76svh, 52rem);
     overflow: hidden;
     /* Static fallback shown until (or instead of) the canvas. */
     background-image: radial-gradient(circle at center, var(--color-line) 1px, transparent 1.5px);
@@ -61,14 +117,25 @@ const tr = useTranslations(locale);
     inset: 0;
     width: 100%;
     height: 100%;
+    opacity: 0;
+    transition: opacity 1200ms ease;
   }
 
-  /* Fades the field into the page background so the text stays readable. */
+  .hero__field[data-field-ready] :global(canvas) {
+    opacity: 1;
+  }
+
+  /*
+   * Keeps the text readable over the field: the page background fades in from
+   * the bottom and from the left, where the copy sits.
+   */
   .hero::after {
     content: '';
     grid-area: 1 / 1;
     z-index: 1;
-    background: linear-gradient(to top, var(--color-bg) 0%, rgb(11 14 17 / 0.7) 35%, transparent 75%);
+    background:
+      linear-gradient(to top, var(--color-bg) 0%, rgb(11 14 17 / 0.72) 38%, transparent 80%),
+      linear-gradient(to right, rgb(11 14 17 / 0.78) 0%, rgb(11 14 17 / 0.35) 45%, transparent 75%);
     pointer-events: none;
   }
 
@@ -78,13 +145,18 @@ const tr = useTranslations(locale);
     flex-direction: column;
     justify-content: flex-end;
     gap: var(--space-5);
-    padding-block: var(--space-9) var(--space-8);
-    /* Let pointer events reach the canvas except on real content. */
+    padding-block: var(--space-9) var(--space-7);
+    /* Let pointer events reach the hero background except on real content. */
     pointer-events: none;
   }
 
-  .hero__content > * {
+  .hero__content > *,
+  .hero__footer > * {
     pointer-events: auto;
+  }
+
+  .hero__footer {
+    pointer-events: none;
   }
 
   .hero__name {
@@ -96,11 +168,85 @@ const tr = useTranslations(locale);
     font-family: var(--font-mono);
     font-size: var(--text-base);
     line-height: 1.5;
+    color: var(--color-text);
+  }
+
+  .hero__support {
+    max-width: 52ch;
+    margin-top: calc(var(--space-2) * -1);
+    font-size: var(--text-lg);
+    line-height: 1.5;
     color: var(--color-text-muted);
+  }
+
+  .hero__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-5) var(--space-6);
+    margin-top: var(--space-2);
   }
 
   .hero__actions {
     --cluster-gap: var(--space-3);
-    margin-top: var(--space-2);
+  }
+
+  .hero__chip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2em 0.6em;
+    padding: 0.45em 0.8em;
+    border: var(--border-hairline);
+    border-radius: var(--radius-sm);
+    background: rgb(11 14 17 / 0.7);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  .hero__chip-dot {
+    width: 0.5em;
+    height: 0.5em;
+    border-radius: var(--radius-full);
+    background: var(--color-accent);
+  }
+
+  .hero__chip-sep {
+    color: var(--color-line-strong);
+  }
+
+  .hero__chip-live {
+    display: inline-flex;
+    gap: 0.6em;
+  }
+
+  .hero__chip-live[hidden] {
+    display: none;
+  }
+
+  .hero__chip-value {
+    color: var(--color-data);
+  }
+
+  .hero__chip a {
+    color: var(--color-text);
+    text-decoration: underline;
+    text-decoration-color: var(--color-line-strong);
+    text-underline-offset: 0.25em;
+  }
+
+  .hero__chip a:hover {
+    color: var(--color-accent);
+    text-decoration-color: currentColor;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero__field :global(canvas) {
+      transition: none;
+    }
   }
 </style>
