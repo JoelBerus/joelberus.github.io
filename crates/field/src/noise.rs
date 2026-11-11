@@ -5,9 +5,13 @@
 //! noise there is, which makes it a good one to implement from scratch.
 //!
 //! The flow field is the *curl* of that scalar noise rather than "noise mapped
-//! to an angle". A curl field has zero divergence, so particles neither pile
-//! up in sinks nor leave holes behind: the density stays even without any
-//! extra bookkeeping.
+//! to an angle". The curl of a potential is divergence-free: it has no sources
+//! and no sinks, so the flow tends not to gather particles in obvious clumps.
+//!
+//! That is a property of the exact field at one instant, not a guarantee about
+//! the particles. Here the curl is estimated with finite differences, and the
+//! simulation adds inertia, a speed limit, a pointer force and respawning on
+//! top (see `sim.rs`), so the density is only roughly even.
 
 #![forbid(unsafe_code)]
 
@@ -118,6 +122,29 @@ mod tests {
             })
             .count();
         assert!(differing > 90);
+    }
+
+    /// The property the module docs rely on, checked numerically: the
+    /// divergence `d(cx)/dx + d(cy)/dy` of the curl is much smaller than the
+    /// size of its individual terms.
+    #[test]
+    fn curl_has_almost_no_divergence() {
+        const H: f32 = 0.05;
+        let (mut divergence, mut magnitude) = (0.0f64, 0.0f64);
+        for i in 0..400 {
+            // Points away from lattice lines, where the noise is smooth.
+            let x = 0.5 + (i % 20) as f32 + 0.3 * ((i * 7) % 3) as f32 - 0.3;
+            let y = 0.5 + (i / 20) as f32 + 0.3 * ((i * 5) % 3) as f32 - 0.3;
+            let dcx_dx = (curl(x + H, y, 0.4, 8).0 - curl(x - H, y, 0.4, 8).0) / (2.0 * H);
+            let dcy_dy = (curl(x, y + H, 0.4, 8).1 - curl(x, y - H, 0.4, 8).1) / (2.0 * H);
+            divergence += f64::from((dcx_dx + dcy_dy).abs());
+            magnitude += f64::from(dcx_dx.abs() + dcy_dy.abs());
+        }
+        assert!(magnitude > 1.0, "the field is not flat: {magnitude}");
+        assert!(
+            divergence < 0.05 * magnitude,
+            "divergence {divergence} against terms of {magnitude}"
+        );
     }
 
     #[test]

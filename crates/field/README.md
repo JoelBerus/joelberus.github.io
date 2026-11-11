@@ -10,10 +10,11 @@ I can explain.
 
 ## What it does
 
-A few hundred particles drift through a vector field. The field is the curl of
-a value-noise function, so it has no sources or sinks and the particles stay
-evenly spread. The pointer adds a local swirl. Particles live for a few seconds
-and then respawn somewhere else.
+A few hundred particles drift through a vector field. The base field is the
+curl of a value-noise potential, which makes it divergence-free: it has no
+sources or sinks, so the flow tends not to gather particles in obvious clumps.
+The pointer adds a local swirl. Particles live for a few seconds and then
+respawn somewhere else.
 
 Rust runs the simulation. JavaScript draws it on a 2D canvas.
 
@@ -21,7 +22,7 @@ Rust runs the simulation. JavaScript draws it on a 2D canvas.
 
 | File           | Role                                                                 |
 | -------------- | -------------------------------------------------------------------- |
-| `src/rng.rs`   | PCG32 random number generator, about 20 lines, no `rand` crate       |
+| `src/rng.rs`   | PCG32 random number generator, about 30 lines, no `rand` crate       |
 | `src/noise.rs` | 3D value noise and its 2D curl                                       |
 | `src/sim.rs`   | `Field` and `Particle`: stepping, pointer force, resize, respawn     |
 | `src/wasm.rs`  | `wasm-bindgen` wrapper, the only code that knows about the browser   |
@@ -70,8 +71,10 @@ const particles = new Float32Array(
 **Rust owns the buffer, JavaScript borrows it.** The particles live in one
 `Vec<Particle>` that the `Field` owns for its whole life. `Particle` is
 `#[repr(C)]` and made only of `f32` fields, so the vector is, byte for byte, a
-flat array of floats. A compile-time assertion checks that. JavaScript gets the
-address and length and reads the data in place.
+flat array of floats. Compile-time assertions pin that layout: the size and
+alignment of the struct and the offset of every field (`offset_of!`), which are
+the indices the JavaScript renderer reads. JavaScript gets the address and
+length and reads the data in place.
 
 The Rust borrow checker cannot see across this boundary, so the rule has to be
 kept by hand on the JavaScript side: the view is stale after `setCount` (the
@@ -80,14 +83,27 @@ kept by hand on the JavaScript side: the view is stale after `setCount` (the
 recreates the view in both cases.
 
 **No allocation per frame.** `step`, `set_pointer` and `resize` mutate
-particles in place. A test checks that the buffer address is unchanged after
-resizing and stepping. Each frame is one call into WebAssembly.
+particles in place. Tests check that the buffer address is unchanged after
+stepping, resizing and moving the pointer, and that the pointer and length
+describe the live buffer again after `set_count`. Each frame is one call into
+WebAssembly.
 
-**Determinism.** The same seed and the same sequence of calls give
-bit-identical particles. Nothing reads a clock or a system random source; the
+**Determinism.** For a given build, the same seed and the same sequence of
+calls give the same state. Nothing reads a clock or a system random source; the
 generator is part of the state, and respawns consume it in particle order. The
-tests compare states with exact float equality. This holds on one platform. I
-have not checked that native and WebAssembly builds agree bit for bit.
+native tests compare whole states, and the list of which particle respawned on
+which step, with exact float equality. The generator itself is checked against
+the output of the PCG reference implementation.
+
+The scope of that claim is one build on one platform. No test compares a native
+build with the WebAssembly build, so I do not claim they agree bit for bit.
+
+**Divergence-free is a property of the field, not of the particles.** The curl
+of a potential has zero divergence, and a test checks it numerically. The
+particles only follow that field approximately: the curl is estimated with
+finite differences, velocities have inertia and a speed limit, the pointer
+adds a push that does have divergence, and particles respawn at random places.
+The spread looks even; nothing guarantees it.
 
 **No `unsafe`.** Returning a raw pointer is safe in Rust; dereferencing it is
 not, and only JavaScript ever reads through it.

@@ -30,12 +30,12 @@ const en = {
         {
           term: 'Deterministic',
           detail:
-            'Same seed and same inputs give bit-identical particles. The random generator (PCG32) and the value noise are written by hand, without the rand crate.',
+            'In a given build, the same seed and the same inputs give the same particles. The random generator (PCG32) and the value noise are written by hand, without the rand crate.',
         },
         {
           term: 'Tested',
           detail:
-            'The core has no WebAssembly types, so cargo test runs it natively: determinism, bounds, resizing and pointer influence.',
+            'The core has no WebAssembly types, so cargo test runs it natively: determinism, respawning, bounds, resizing, pointer influence, and PCG32 against its reference output.',
         },
         {
           term: 'No per-frame allocation',
@@ -102,12 +102,12 @@ const es: Copy = {
         {
           term: 'Determinista',
           detail:
-            'La misma semilla y las mismas entradas producen partículas idénticas bit a bit. El generador aleatorio (PCG32) y el ruido están escritos a mano, sin el crate rand.',
+            'En una misma compilación, la misma semilla y las mismas entradas producen las mismas partículas. El generador aleatorio (PCG32) y el ruido están escritos a mano, sin el crate rand.',
         },
         {
           term: 'Con pruebas',
           detail:
-            'El núcleo no usa tipos de WebAssembly, así que cargo test lo ejecuta de forma nativa: determinismo, límites, redimensionado e influencia del puntero.',
+            'El núcleo no usa tipos de WebAssembly, así que cargo test lo ejecuta de forma nativa: determinismo, reaparición, límites, redimensionado, influencia del puntero y PCG32 contra su salida de referencia.',
         },
         {
           term: 'Sin asignar memoria por fotograma',
