@@ -42,8 +42,8 @@ export const drupela: WorkCase = {
     es: 'SaaS · Fundador y único ingeniero',
   },
   cardSummary: {
-    en: "A modular system for restaurants and cafés in Ecuador that joins the venue's own operations with a diner app where only people who actually paid can rate each dish.",
-    es: 'Un sistema modular para restaurantes y cafeterías de Ecuador que une la operación del local con una app para comensales donde solo quien pagó puede evaluar cada plato.',
+    en: 'A modular system for restaurants and cafés in Ecuador. Its first module, staff scheduling with a time clock, is in production; till and table service are in development on the same foundation.',
+    es: 'Un sistema modular para restaurantes y cafeterías de Ecuador. Su primer módulo, horarios del personal con reloj de asistencia, está en producción; caja y salón están en desarrollo sobre la misma base.',
   },
   cardTags: [AI_TAG, 'TypeScript', 'Fastify', 'PostgreSQL', 'React', 'PWA'],
 
@@ -52,8 +52,8 @@ export const drupela: WorkCase = {
     es: 'Caso: Drupela, un SaaS modular para restaurantes y cafeterías de Ecuador. Monorepo en TypeScript, Fastify, PostgreSQL con seguridad a nivel de fila y más de 2.000 pruebas automatizadas.',
   },
   pitch: {
-    en: 'A modular SaaS that joins how a restaurant runs with the diners who come back.',
-    es: 'Un SaaS modular que une la operación de un restaurante con los comensales que vuelven.',
+    en: 'A modular SaaS for running a restaurant, with its first module, staff scheduling, in production.',
+    es: 'Un SaaS modular para operar un restaurante, con su primer módulo, horarios del personal, en producción.',
   },
   meta: [
     {
@@ -66,8 +66,8 @@ export const drupela: WorkCase = {
     {
       label: { en: 'Status', es: 'Estado' },
       value: {
-        en: 'Landing live. The product is in pilot validation, not yet in production.',
-        es: 'Landing publicada. El producto está en validación piloto y aún no está en producción.',
+        en: 'Turnos has been in production since November 2026 and is onboarding its pilot. The other modules are not on sale yet.',
+        es: 'Turnos está en producción desde noviembre de 2026 e incorporando su piloto. Los demás módulos aún no están a la venta.',
       },
     },
     {
@@ -106,48 +106,48 @@ export const drupela: WorkCase = {
 
   overview: {
     title: {
-      en: "The venue's own system, joined to its diners",
-      es: 'El sistema del local, unido a sus comensales',
+      en: 'One base, one module at a time',
+      es: 'Una base, un módulo a la vez',
     },
     paragraphs: {
       en: [
-        'Drupela is a modular SaaS for restaurants, cafés and small food businesses in Ecuador. It is one base product, sold with more or fewer modules depending on what each business needs.',
-        "On one side is the venue's own system: till, kitchen, costs, suppliers, finance and electronic invoicing for SRI, Ecuador's tax authority. On the other is a diner app where only someone who actually paid can rate each dish, collect stamps and redeem coupons.",
-        'The first module is Turnos, staff shift scheduling with a time clock. The landing is live at drupela.com; the product itself is in pilot validation and is not in production yet.',
+        'Drupela is a modular SaaS for restaurants, cafés and small food businesses in Ecuador. It is one base product, designed so that modules can be added according to what each business needs.',
+        'Turnos is the first module and the one in production: staff shift scheduling with a time clock, used from an owner panel and a staff app. It went live in November 2026 and is onboarding its pilot.',
+        'Till and table service are built on the same base and are not on sale yet. Further out, the roadmap gives each business its own website, ingredient-level inventory, loyalty for its own customers and AI assistance. An earlier idea, a shared app for diners across venues, is frozen in favor of that.',
       ],
       es: [
-        'Drupela es un SaaS modular para restaurantes, cafeterías y pequeños negocios de comida en Ecuador. Es un solo producto base, que se vende con más o menos módulos según lo que necesita cada negocio.',
-        'De un lado está el sistema propio del local: caja, cocina, costos, proveedores, finanzas y facturación electrónica para el SRI, la autoridad tributaria de Ecuador. Del otro, una app para comensales donde solo quien de verdad pagó puede evaluar cada plato, juntar sellos y canjear cupones.',
-        'El primer módulo es Turnos: horarios del personal con reloj de asistencia. La landing está publicada en drupela.com; el producto está en validación piloto y todavía no está en producción.',
+        'Drupela es un SaaS modular para restaurantes, cafeterías y pequeños negocios de comida en Ecuador. Es un solo producto base, diseñado para incorporar módulos según lo que necesita cada negocio.',
+        'Turnos es el primer módulo y el que está en producción: horarios del personal con reloj de asistencia, que se usa desde un panel para el dueño y una app para el equipo. Salió en noviembre de 2026 y está incorporando su piloto.',
+        'Caja y salón están construidos sobre la misma base y todavía no están a la venta. Más adelante, la hoja de ruta le da a cada negocio su propio sitio web, inventario por ingredientes, fidelidad para sus propios clientes y asistencia con IA. Una idea anterior, una app compartida para comensales de varios locales, quedó congelada en favor de eso.',
       ],
     },
     points: [
       {
-        title: { en: 'For the venue', es: 'Para el local' },
+        title: { en: 'In production: Turnos', es: 'En producción: Turnos' },
         body: {
-          en: 'Till, kitchen, costs, suppliers, finance and electronic invoicing for SRI in one system.',
-          es: 'Caja, cocina, costos, proveedores, finanzas y facturación electrónica para el SRI en un solo sistema.',
+          en: 'Staff shift scheduling with a time clock, from an owner panel and a staff app.',
+          es: 'Horarios del personal con reloj de asistencia, desde un panel para el dueño y una app para el equipo.',
         },
       },
       {
-        title: { en: 'For the diner', es: 'Para el comensal' },
+        title: { en: 'Built, not on sale yet', es: 'Construido, aún sin vender' },
         body: {
-          en: 'Ratings per dish from people who actually paid, plus stamps and coupons.',
-          es: 'Evaluaciones por plato de quienes de verdad pagaron, además de sellos y cupones.',
+          en: 'Till and table service: sales, tables, orders, split bills and kitchen tickets, able to keep working offline.',
+          es: 'Caja y salón: ventas, mesas, pedidos, cuentas divididas y comandas, capaces de seguir funcionando sin conexión.',
+        },
+      },
+      {
+        title: { en: 'On the roadmap', es: 'En la hoja de ruta' },
+        body: {
+          en: "Each business's own website, ingredient-level inventory, loyalty and AI assistance.",
+          es: 'Sitio web propio por negocio, inventario por ingredientes, fidelidad y asistencia con IA.',
         },
       },
       {
         title: { en: 'Modular', es: 'Modular' },
         body: {
-          en: 'One base product. Each business takes the modules it needs.',
-          es: 'Un solo producto base. Cada negocio toma los módulos que necesita.',
-        },
-      },
-      {
-        title: { en: 'First module: Turnos', es: 'Primer módulo: Turnos' },
-        body: {
-          en: 'Staff shift scheduling with a time clock.',
-          es: 'Horarios del personal con reloj de asistencia.',
+          en: 'One base product, designed to take on modules as each business needs them.',
+          es: 'Un solo producto base, diseñado para sumar módulos según lo que necesita cada negocio.',
         },
       },
     ],
@@ -312,8 +312,8 @@ export const drupela: WorkCase = {
       {
         title: { en: 'AI-assisted workflow', es: 'Flujo de trabajo asistido por IA' },
         body: {
-          en: 'Built with an AI-assisted workflow: coding agents write and independent models audit each phase. The product itself has no AI features.',
-          es: 'Construido con un flujo de trabajo asistido por IA: agentes de código escriben y modelos independientes auditan cada fase. El producto en sí no tiene funciones de IA.',
+          en: 'Built with an AI-assisted workflow: coding agents write and independent models audit each phase. The product itself has no AI features today.',
+          es: 'Construido con un flujo de trabajo asistido por IA: agentes de código escriben y modelos independientes auditan cada fase. El producto en sí no tiene funciones de IA hoy.',
         },
       },
     ],
